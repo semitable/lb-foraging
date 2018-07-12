@@ -5,13 +5,12 @@ import random
 import numpy as np
 
 from foraging import Env
-from agents import RandomAgent
-
+from agents import RandomAgent, RushAgent
 _MAX_STEPS = 100
 
 
 def main():
-	env = Env(agents=(RandomAgent, RandomAgent, RandomAgent), max_agent_level=4, field_size=(12, 8), max_food=8, max_food_level=4)
+	env = Env(agents=(RushAgent,), max_agent_level=4, field_size=(12, 8), max_food=8, max_food_level=4)
 	obs = env.reset()
 
 	for _ in range(_MAX_STEPS):

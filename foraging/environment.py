@@ -6,11 +6,12 @@ import numpy as np
 
 
 class Action(Enum):
-	NORTH = N = 0
-	SOUTH = S = 1
-	WEST = W = 2
-	EAST = E = 3
-	LOAD = 4
+	NONE = 0
+	NORTH = N = 1
+	SOUTH = S = 2
+	WEST = W = 3
+	EAST = E = 4
+	LOAD = 5
 
 
 class Env:
@@ -96,7 +97,8 @@ class Env:
 				attempts += 1
 
 	def _is_valid_action(self, agent, action):
-
+		if action == Action.NONE:
+			return True
 		if action == Action.NORTH:
 			return agent.position[0] > 0 and self.field[agent.position[0] - 1, agent.position[1]] == 0
 		elif action == Action.SOUTH:
@@ -111,7 +113,6 @@ class Env:
 		raise ValueError("Undefined action")
 
 	def _make_obs(self, agent):
-
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
 			agents=[self.AgentObservation(position=a.position, level=a.level) for a in self.agents],
@@ -138,6 +139,14 @@ class Env:
 				agent.position = (agent.position[0], agent.position[1] - 1)
 			elif action == Action.EAST:
 				agent.position = (agent.position[0], agent.position[1] + 1)
+			elif action == Action.LOAD:
+				row, col = agent.position
+				agent.score += self.neighborhood(row, col).sum()
+				self.field[
+				max(row - 1, 0): min(row + 2, self.rows),
+				max(col - 1, 0): min(col + 2, self.cols)
+				] = 0
+				print("AGENT SCORED")
 
 		return [self._make_obs(agent) for agent in self.agents]
 
