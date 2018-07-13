@@ -13,7 +13,7 @@ class Agent:
 
 	def _closest_food(self, obs, max_food_level=0):
 		x, y = self.position
-		field = obs.field
+		field = np.copy(obs.field)
 
 		if max_food_level > 0:
 			field[field > max_food_level] = 0

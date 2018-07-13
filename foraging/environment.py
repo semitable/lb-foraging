@@ -72,19 +72,18 @@ class Env:
 		food_count = 0
 		attempts = 0
 
-		while food_count < max_food and attempts < 1000:
+		while food_count < max_food and attempts < 10000:
+			attempts += 1
 			row = randint(1, self.rows - 2)
 			col = randint(1, self.cols - 2)
 
 			# check if it has neighbors:
 			if self.neighborhood(row, col, distance=2).sum() > 0:
-				attempts += 1
 				continue
 
 			self.field[row, col] = randint(1, max_level)
-
 			food_count += 1
-			attempts += 1
+
 
 	def _is_empty_location(self, row, col):
 
@@ -132,7 +131,7 @@ class Env:
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
 			agents=[self.AgentObservation(position=a.position, level=a.level) for a in self.agents],
-			field=self.field
+			field=np.copy(self.field)
 		)
 
 	def reset(self):
@@ -160,7 +159,6 @@ class Env:
 				agent.score += self.adjacent_food(row, col)
 				self.field[max(row - 1, 0):min(row + 2, self.rows), col] = 0
 				self.field[row, max(col - 1, 0):min(col + 2, self.cols)] = 0
-				print("AGENT SCORED")
 
 		return [self._make_obs(agent) for agent in self.agents]
 
