@@ -4,7 +4,11 @@ import random
 
 class RushAgent(Agent):
 	def step(self, obs):
-		r, c = self._closest_food(obs, self.level)
+		try:
+			r, c = self._closest_food(obs, self.level)
+		except TypeError:
+			return Action.NONE
+
 		y, x = self.position
 
 		if (abs(r - y) + abs(c - x)) == 1:
