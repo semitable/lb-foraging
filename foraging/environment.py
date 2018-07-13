@@ -27,7 +27,7 @@ class Env:
 	"""
 
 	action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
-	Observation = namedtuple("Observation", ['field', 'actions', 'agents'])
+	Observation = namedtuple("Observation", ['field', 'actions', 'agents', 'game_over'])
 	AgentObservation = namedtuple("AgentObservation", ['position', 'level'])
 
 	def __init__(self, agents, max_agent_level, field_size, max_food, max_food_level):
@@ -38,8 +38,7 @@ class Env:
 		self.max_food = max_food
 		self.max_food_level = max_food_level
 		self.max_agent_level = max_agent_level
-
-		self.grid_size = 50
+		self._game_over = None
 
 		self._init_render()
 
@@ -54,6 +53,10 @@ class Env:
 	@property
 	def cols(self):
 		return self.field_size[1]
+
+	@property
+	def game_over(self):
+		return self._game_over
 
 	def neighborhood(self, row, col, distance=1):
 
@@ -83,7 +86,6 @@ class Env:
 
 			self.field[row, col] = randint(1, max_level)
 			food_count += 1
-
 
 	def _is_empty_location(self, row, col):
 
@@ -131,17 +133,21 @@ class Env:
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
 			agents=[self.AgentObservation(position=a.position, level=a.level) for a in self.agents],
-			field=np.copy(self.field)
+			field=np.copy(self.field),
+			game_over = self.game_over
 		)
 
 	def reset(self):
 		self.field = np.zeros(self.field_size, np.int32)
 		self.spawn_food(self.max_food, self.max_food_level)
 		self.spawn_agents(self.max_agent_level)
+		self.current_step = 0
+		self._game_over = False
 
 		return [self._make_obs(agent) for agent in self.agents]
 
 	def step(self, actions):
+		self.current_step += 1
 		for agent, action in zip(self.agents, actions):
 			if not self._is_valid_action(agent, action):
 				raise ValueError("Invalid action attempted")
@@ -160,18 +166,27 @@ class Env:
 				self.field[max(row - 1, 0):min(row + 2, self.rows), col] = 0
 				self.field[row, max(col - 1, 0):min(col + 2, self.cols)] = 0
 
+		if self.field.sum() == 0:
+			self._game_over = 0
+
 		return [self._make_obs(agent) for agent in self.agents]
 
 	def _init_render(self):
+
+		self.grid_size = 50
+		self.font_size = 20
 		pygame.init()
-		self._screen = pygame.display.set_mode((self.cols * self.grid_size, self.rows * self.grid_size))
-		self._font = pygame.font.SysFont("monospace", 20)
+		self._screen = pygame.display.set_mode(
+			(self.cols * self.grid_size + 1,
+			 self.rows * self.grid_size + 1)
+		)
+		self._font = pygame.font.SysFont("monospace", self.font_size)
 
 	def _draw_grid(self):
-		for r in range(self.rows):
+		for r in range(self.rows + 1):
 			pygame.draw.line(self._screen, _WHITE, (0, self.grid_size * r),
 							 (self.grid_size * self.cols, self.grid_size * r))
-		for c in range(self.cols):
+		for c in range(self.cols + 1):
 			pygame.draw.line(self._screen, _WHITE, (self.grid_size * c, 0),
 							 (self.grid_size * c, self.grid_size * self.rows))
 

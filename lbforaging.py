@@ -10,7 +10,7 @@ _MAX_STEPS = 100
 
 
 def main():
-	env = Env(agents=(RushAgent,), max_agent_level=4, field_size=(12, 8), max_food=8, max_food_level=4)
+	env = Env(agents=(RushAgent,RushAgent, RushAgent), max_agent_level=4, field_size=(12, 8), max_food=8, max_food_level=4)
 	obs = env.reset()
 
 	for _ in range(_MAX_STEPS):
@@ -20,6 +20,9 @@ def main():
 			actions.append(agent.step(obs[i]))
 		obs = env.step(actions)
 		env.render()
+
+		if env.game_over:
+			return
 
 
 if __name__ == '__main__':
