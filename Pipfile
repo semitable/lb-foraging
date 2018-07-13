@@ -6,6 +6,7 @@ name = "pypi"
 [packages]
 numpy = "*"
 gym = "*"
+pygame = "*"
 
 [dev-packages]
 

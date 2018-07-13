@@ -3,7 +3,7 @@ from enum import Enum
 from random import randint
 import random
 import numpy as np
-
+import time
 from foraging import Env
 from agents import RandomAgent, RushAgent
 _MAX_STEPS = 100
@@ -14,6 +14,7 @@ def main():
 	obs = env.reset()
 
 	for _ in range(_MAX_STEPS):
+		time.sleep(1)
 		actions = []
 		for i, agent in enumerate(env.agents):
 			actions.append(agent.step(obs[i]))

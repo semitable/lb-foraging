@@ -3,6 +3,13 @@ from enum import Enum
 from random import randint
 
 import numpy as np
+import pygame
+
+# Define some colors
+_BLACK = (0, 0, 0)
+_WHITE = (255, 255, 255)
+_GREEN = (0, 255, 0)
+_RED = (255, 0, 0)
 
 
 class Action(Enum):
@@ -32,6 +39,10 @@ class Env:
 		self.max_food_level = max_food_level
 		self.max_agent_level = max_agent_level
 
+		self.grid_size = 50
+
+		self._init_render()
+
 	@property
 	def field_size(self):
 		return self.field.shape
@@ -51,6 +62,11 @@ class Env:
 			   max(col - distance, 0):min(col + distance + 1, self.cols)
 			   ]
 
+	def adjacent_food(self, row, col):
+		return (self.field[max(row - 1, 0):min(row + 2, self.rows), col].sum()
+				+ self.field[row, max(col - 1, 0):min(col + 2, self.cols)].sum()
+				)
+
 	def spawn_food(self, max_food, max_level):
 
 		food_count = 0
@@ -61,7 +77,7 @@ class Env:
 			col = randint(1, self.cols - 2)
 
 			# check if it has neighbors:
-			if self.neighborhood(row, col).sum() > 0:
+			if self.neighborhood(row, col, distance=2).sum() > 0:
 				attempts += 1
 				continue
 
@@ -108,7 +124,7 @@ class Env:
 		elif action == Action.EAST:
 			return agent.position[1] < self.cols - 1 and self.field[agent.position[0], agent.position[1] + 1] == 0
 		elif action == Action.LOAD:
-			return self.neighborhood(agent.position[0], agent.position[1]).sum() > 0
+			return self.adjacent_food(*agent.position) > 0
 
 		raise ValueError("Undefined action")
 
@@ -141,25 +157,49 @@ class Env:
 				agent.position = (agent.position[0], agent.position[1] + 1)
 			elif action == Action.LOAD:
 				row, col = agent.position
-				agent.score += self.neighborhood(row, col).sum()
-				self.field[
-				max(row - 1, 0): min(row + 2, self.rows),
-				max(col - 1, 0): min(col + 2, self.cols)
-				] = 0
+				agent.score += self.adjacent_food(row, col)
+				self.field[max(row - 1, 0):min(row + 2, self.rows), col] = 0
+				self.field[row, max(col - 1, 0):min(col + 2, self.cols)] = 0
 				print("AGENT SCORED")
 
 		return [self._make_obs(agent) for agent in self.agents]
 
-	def render(self):
-		print('==========')
+	def _init_render(self):
+		pygame.init()
+		self._screen = pygame.display.set_mode((self.cols * self.grid_size, self.rows * self.grid_size))
+		self._font = pygame.font.SysFont("monospace", 20)
+
+	def _draw_grid(self):
 		for r in range(self.rows):
-			print('|', end='')
+			pygame.draw.line(self._screen, _WHITE, (0, self.grid_size * r),
+							 (self.grid_size * self.cols, self.grid_size * r))
+		for c in range(self.cols):
+			pygame.draw.line(self._screen, _WHITE, (self.grid_size * c, 0),
+							 (self.grid_size * c, self.grid_size * self.rows))
+
+	def _draw_food(self):
+		for r in range(self.rows):
 			for c in range(self.cols):
 				if self._is_empty_location(r, c):
-					print(' ', end='')
+					pass
 				elif self.field[r, c] != 0:
-					print(self.field[r, c], end='')
-				else:
-					print('x', end='')
-			print('|')
-		print('==========')
+					self._screen.blit(
+						self._font.render(str(self.field[r, c]), 1, _GREEN),
+						(self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
+					)
+
+	def _draw_agents(self):
+		for agent in self.agents:
+			r, c = agent.position
+			self._screen.blit(
+				self._font.render(str(agent.level), 1, _RED),
+				(self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
+			)
+
+	def render(self):
+		self._screen.fill(_BLACK)
+		self._draw_grid()
+		self._draw_food()
+		self._draw_agents()
+
+		pygame.display.flip()
