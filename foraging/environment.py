@@ -166,8 +166,7 @@ class Env:
 				self.field[max(row - 1, 0):min(row + 2, self.rows), col] = 0
 				self.field[row, max(col - 1, 0):min(col + 2, self.cols)] = 0
 
-		if self.field.sum() == 0:
-			self._game_over = 0
+		self._game_over = self.field.sum() == 0
 
 		return [self._make_obs(agent) for agent in self.agents]
 
