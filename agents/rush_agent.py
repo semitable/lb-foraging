@@ -3,6 +3,9 @@ from foraging.environment import Action
 import random
 
 class RushAgent(Agent):
+
+	name = "Rush Agent"
+
 	def step(self, obs):
 		try:
 			r, c = self._closest_food(obs, self.level)

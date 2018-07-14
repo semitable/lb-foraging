@@ -2,6 +2,12 @@ import numpy as np
 _MAX_INT = 999999
 
 class Agent:
+
+	name = "Prototype Agent"
+
+	def __repr__(self):
+		return self.name
+
 	def __init__(self, position, level):
 		self.visibility = _MAX_INT
 		self.position = position

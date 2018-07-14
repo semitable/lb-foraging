@@ -40,7 +40,7 @@ class Env:
 		self.max_agent_level = max_agent_level
 		self._game_over = None
 
-		self._init_render()
+		self._rendering_initialized = False
 
 	@property
 	def field_size(self):
@@ -236,6 +236,7 @@ class Env:
 			 self.rows * self.grid_size + 1)
 		)
 		self._font = pygame.font.SysFont("monospace", self.font_size)
+		self._rendering_initialized = True
 
 	def _draw_grid(self):
 		for r in range(self.rows + 1):
@@ -265,6 +266,9 @@ class Env:
 			)
 
 	def render(self):
+		if not self._rendering_initialized:
+			self._init_render()
+
 		self._screen.fill(_BLACK)
 		self._draw_grid()
 		self._draw_food()
