@@ -170,6 +170,10 @@ class Env:
 			if not self._is_valid_action(agent, action):
 				raise ValueError("Invalid action attempted")
 
+			# also give a negative reward if action is not LOAD
+			if action != Action.LOAD:
+				agent.score -= 0.01
+
 		loading_agents = set()
 
 		# move agents
