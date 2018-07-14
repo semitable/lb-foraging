@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, defaultdict
 from enum import Enum
 from random import randint
 
@@ -70,6 +70,22 @@ class Env:
 				+ self.field[row, max(col - 1, 0):min(col + 2, self.cols)].sum()
 				)
 
+	def adjacent_food_location(self, row, col):
+		if row > 1 and self.field[row - 1, col] > 0:
+			return row - 1, col
+		elif row < self.rows - 1 and self.field[row + 1, col] > 0:
+			return row + 1, col
+		elif col > 1 and self.field[row, col - 1] > 0:
+			return row, col - 1
+		elif col < self.cols - 1 and self.field[row, col + 1] > 0:
+			return row, col + 1
+
+	def adjacent_agents(self, row, col):
+		return [agent for agent in self.agents if
+				abs(agent.position[0] - row) == 1 and agent.position[1] == col or
+				abs(agent.position[1] - col) == 1 and agent.position[0] == row
+				]
+
 	def spawn_food(self, max_food, max_level):
 
 		food_count = 0
@@ -134,7 +150,7 @@ class Env:
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
 			agents=[self.AgentObservation(position=a.position, level=a.level) for a in self.agents],
 			field=np.copy(self.field),
-			game_over = self.game_over
+			game_over=self.game_over
 		)
 
 	def reset(self):
@@ -148,23 +164,63 @@ class Env:
 
 	def step(self, actions):
 		self.current_step += 1
+
+		# check if actions are valid
 		for agent, action in zip(self.agents, actions):
 			if not self._is_valid_action(agent, action):
 				raise ValueError("Invalid action attempted")
 
-			if action == Action.NORTH:
-				agent.position = (agent.position[0] - 1, agent.position[1])
+		loading_agents = set()
+
+		# move agents
+		# if two or more agents try to move to the same location they all fail
+		collisions = defaultdict(list)
+
+		# so check for collisions
+		for agent, action in zip(self.agents, actions):
+			if action == Action.NONE:
+				collisions[agent.position].append(agent)
+			elif action == Action.NORTH:
+				collisions[(agent.position[0] - 1, agent.position[1])].append(agent)
 			elif action == Action.SOUTH:
-				agent.position = (agent.position[0] + 1, agent.position[1])
+				collisions[(agent.position[0] + 1, agent.position[1])].append(agent)
 			elif action == Action.WEST:
-				agent.position = (agent.position[0], agent.position[1] - 1)
+				collisions[(agent.position[0], agent.position[1] - 1)].append(agent)
 			elif action == Action.EAST:
-				agent.position = (agent.position[0], agent.position[1] + 1)
+				collisions[(agent.position[0], agent.position[1] + 1)].append(agent)
 			elif action == Action.LOAD:
-				row, col = agent.position
-				agent.score += self.adjacent_food(row, col)
-				self.field[max(row - 1, 0):min(row + 2, self.rows), col] = 0
-				self.field[row, max(col - 1, 0):min(col + 2, self.cols)] = 0
+				collisions[agent.position].append(agent)
+				loading_agents.add(agent)
+
+		# and do movements for non colliding agents
+
+		for k, v in collisions.items():
+			if len(v) > 1:  # make sure no more than an agent will arrive at location
+				continue
+			v[0].position = k
+
+		# finally process the loadings:
+		while loading_agents:
+			# find adjacent food
+			agent = loading_agents.pop()
+			frow, fcol = self.adjacent_food_location(*agent.position)
+			food = self.field[frow, fcol]
+
+			adj_agents = self.adjacent_agents(frow, fcol)
+
+			adj_agent_level = sum([a.level for a in adj_agents])
+
+			loading_agents = loading_agents - set(adj_agents)
+
+			if adj_agent_level < food:
+				# failed to load
+				continue
+
+			# else the food was loaded and each agent scores points
+			for a in adj_agents:
+				a.score += food
+			# and the food is removed
+			self.field[frow, fcol] = 0
 
 		self._game_over = self.field.sum() == 0
 
