@@ -30,7 +30,7 @@ class Env:
 	Observation = namedtuple("Observation", ['field', 'actions', 'agents', 'game_over'])
 	AgentObservation = namedtuple("AgentObservation", ['position', 'level'])
 
-	def __init__(self, agents, max_agent_level, field_size, max_food, max_food_level):
+	def __init__(self, agents, max_agent_level, field_size, max_food, max_food_level, sight):
 		self.agent_classes = agents
 		self.agents = []
 		self.field = np.zeros(field_size, np.int32)
@@ -38,6 +38,7 @@ class Env:
 		self.max_food = max_food
 		self.max_food_level = max_food_level
 		self.max_agent_level = max_agent_level
+		self.sight = sight
 		self._game_over = None
 
 		self._rendering_initialized = False
@@ -149,7 +150,7 @@ class Env:
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
 			agents=[self.AgentObservation(position=a.position, level=a.level) for a in self.agents],
-			field=np.copy(self.field),
+			field=np.copy(self.neighborhood(*agent.position, self.sight)),
 			game_over=self.game_over
 		)
 
