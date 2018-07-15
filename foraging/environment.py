@@ -1,7 +1,7 @@
 from collections import namedtuple, defaultdict
 from enum import Enum
 from random import randint
-
+import logging
 import numpy as np
 import pygame
 
@@ -31,6 +31,7 @@ class Env:
 	AgentObservation = namedtuple("AgentObservation", ['position', 'level'])
 
 	def __init__(self, agents, max_agent_level, field_size, max_food, max_food_level, sight):
+		self.logger = logging.getLogger(__name__)
 		self.agent_classes = agents
 		self.agents = []
 		self.field = np.zeros(field_size, np.int32)
@@ -169,6 +170,7 @@ class Env:
 		# check if actions are valid
 		for agent, action in zip(self.agents, actions):
 			if not self._is_valid_action(agent, action):
+				self.logger.error('{}{} attempted invalid action {}.'.format(agent.name, agent.position, action))
 				raise ValueError("Invalid action attempted")
 
 			# also give a negative reward if action is not LOAD
