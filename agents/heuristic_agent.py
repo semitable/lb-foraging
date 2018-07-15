@@ -12,7 +12,7 @@ class HeuristicAgent(Agent):
 		except TypeError:
 			return Action.NONE
 
-		y, x = self.position
+		y, x = self.observed_position
 
 		if (abs(r - y) + abs(c - x)) == 1:
 			return Action.LOAD

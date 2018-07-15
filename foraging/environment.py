@@ -28,7 +28,7 @@ class Env:
 
 	action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
 	Observation = namedtuple("Observation", ['field', 'actions', 'agents', 'game_over'])
-	AgentObservation = namedtuple("AgentObservation", ['position', 'level'])
+	AgentObservation = namedtuple("AgentObservation", ['position', 'level', 'is_self'])
 
 	def __init__(self, agents, max_agent_level, field_size, max_food, max_food_level, sight):
 		self.logger = logging.getLogger(__name__)
@@ -145,12 +145,16 @@ class Env:
 		elif action == Action.LOAD:
 			return self.adjacent_food(*agent.position) > 0
 
+		self.logger.error("Undefined action {} from {}".format(action, agent.name))
 		raise ValueError("Undefined action")
+
+	def _transform_to_neighborhood(self, center, sight, position):
+		return (position[0]-center[0]+min(sight, center[0]), position[1]-center[1]+min(sight, center[1]))
 
 	def _make_obs(self, agent):
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
-			agents=[self.AgentObservation(position=a.position, level=a.level) for a in self.agents],
+			agents=[self.AgentObservation(position=self._transform_to_neighborhood(agent.position, self.sight,a.position), level=a.level, is_self=a==agent) for a in self.agents if min(self._transform_to_neighborhood(agent.position, self.sight,a.position)) >= 0],
 			field=np.copy(self.neighborhood(*agent.position, self.sight)),
 			game_over=self.game_over
 		)

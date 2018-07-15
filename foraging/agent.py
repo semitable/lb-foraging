@@ -1,9 +1,11 @@
-import numpy as np
 import logging
+
+import numpy as np
+
 _MAX_INT = 999999
 
-class Agent:
 
+class Agent:
 	name = "Prototype Agent"
 
 	def __repr__(self):
@@ -15,6 +17,10 @@ class Agent:
 		self.position = position
 		self.level = level
 		self.score = 0
+
+	def _step(self, obs):
+		self.observed_position = next((x for x in obs.agents if x.is_self), None).position
+		return self.step(obs)
 
 	def step(self, obs):
 		raise NotImplemented("You must implement an agent")

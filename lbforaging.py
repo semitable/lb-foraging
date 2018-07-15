@@ -13,7 +13,7 @@ def _game_loop(env, render):
 	for _ in range(_MAX_STEPS):
 		actions = []
 		for i, agent in enumerate(env.agents):
-			actions.append(agent.step(obs[i]))
+			actions.append(agent._step(obs[i]))
 		obs = env.step(actions)
 
 		if render:
