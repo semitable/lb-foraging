@@ -93,7 +93,7 @@ class Env:
 		food_count = 0
 		attempts = 0
 
-		while food_count < max_food and attempts < 10000:
+		while food_count < max_food and attempts < 1000:
 			attempts += 1
 			row = randint(1, self.rows - 2)
 			col = randint(1, self.cols - 2)
