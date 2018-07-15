@@ -26,7 +26,7 @@ def _game_loop(env, render):
 
 def main(game_count=1, render=False):
 	env = Env(agents=(HeuristicAgent, RandomAgent), max_agent_level=4, field_size=(12, 8), max_food=8,
-			  max_food_level=4, sight=5)
+			  max_food_level=4, sight=3)
 
 	scores = defaultdict(lambda:0)
 

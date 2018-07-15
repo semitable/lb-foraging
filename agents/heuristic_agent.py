@@ -10,7 +10,7 @@ class HeuristicAgent(Agent):
 		try:
 			r, c = self._closest_food(obs, self.level)
 		except TypeError:
-			return Action.NONE
+			return random.choice(obs.actions)
 
 		y, x = self.observed_position
 
