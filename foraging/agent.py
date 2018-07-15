@@ -25,8 +25,13 @@ class Agent:
 	def step(self, obs):
 		raise NotImplemented("You must implement an agent")
 
-	def _closest_food(self, obs, max_food_level=None):
-		x, y = self.position
+	def _closest_food(self, obs, max_food_level=None, start=None):
+
+		if start is None:
+			x, y = self.observed_position
+		else:
+			x, y = start
+
 		field = np.copy(obs.field)
 
 		if max_food_level:
