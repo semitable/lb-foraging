@@ -1,4 +1,5 @@
 import numpy as np
+import logging
 _MAX_INT = 999999
 
 class Agent:
@@ -9,6 +10,7 @@ class Agent:
 		return self.name
 
 	def __init__(self, position, level):
+		self.logger = logging.getLogger(__name__)
 		self.visibility = _MAX_INT
 		self.position = position
 		self.level = level

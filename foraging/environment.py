@@ -171,6 +171,7 @@ class Env:
 		for agent, action in zip(self.agents, actions):
 			if not self._is_valid_action(agent, action):
 				self.logger.error('{}{} attempted invalid action {}.'.format(agent.name, agent.position, action))
+				self.logger.error(self.field)
 				raise ValueError("Invalid action attempted")
 
 			# also give a negative reward if action is not LOAD
