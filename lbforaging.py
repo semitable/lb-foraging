@@ -1,7 +1,7 @@
 import argparse
 import time
 from collections import defaultdict
-from agents import RushAgent, RandomAgent
+from agents import HeuristicAgent, RandomAgent
 from foraging import Env
 
 _MAX_STEPS = 100
@@ -25,7 +25,7 @@ def _game_loop(env, render):
 
 
 def main(game_count=1, render=False):
-	env = Env(agents=(RushAgent, RandomAgent), max_agent_level=4, field_size=(12, 8), max_food=8,
+	env = Env(agents=(HeuristicAgent, RandomAgent), max_agent_level=4, field_size=(12, 8), max_food=8,
 			  max_food_level=4)
 
 	scores = defaultdict(lambda:0)

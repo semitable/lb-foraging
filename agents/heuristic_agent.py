@@ -2,9 +2,9 @@ from foraging import Agent
 from foraging.environment import Action
 import random
 
-class RushAgent(Agent):
+class HeuristicAgent(Agent):
 
-	name = "Rush Agent"
+	name = "Heuristic Agent"
 
 	def step(self, obs):
 		try:

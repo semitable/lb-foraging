@@ -1,2 +1,2 @@
 from .random_agent import RandomAgent
-from .rush_agent import RushAgent
+from .heuristic_agent import HeuristicAgent
