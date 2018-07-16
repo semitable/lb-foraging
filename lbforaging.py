@@ -4,7 +4,7 @@ from collections import defaultdict
 
 from agents import H1, H2, H3, H4, RandomAgent
 from foraging import Env
-
+import numpy as np
 _MAX_STEPS = 100
 
 
@@ -29,18 +29,18 @@ def main(game_count=1, render=False):
 	env = Env(agents=(H1, H2, H3, H4, RandomAgent), max_agent_level=4, field_size=(12, 8), max_food=8,
 			  max_food_level=6, sight=5)
 
-	scores = defaultdict(lambda: 0)
+	efficiency = defaultdict(list)
 
 	for _ in range(game_count):
 		_game_loop(env, render)
 
 		for agent in env.agents:
-			scores[agent.name] += agent.score
+			efficiency[agent.name].append(agent.score / env.current_step)
 
 		env.reset()
 
-	for k, v in scores.items():
-		print("Agent: {} - Score: {}".format(k, v))
+	for k, v in efficiency.items():
+		print("Agent: {} - Efficiency: {}".format(k, np.mean(v)))
 
 
 if __name__ == '__main__':
