@@ -13,6 +13,7 @@ class Agent:
 
 	def __init__(self, position, level, field_size):
 		self.logger = logging.getLogger(__name__)
+		self.history = []
 		self.visibility = _MAX_INT
 		self.position = position
 		self.level = level
@@ -21,7 +22,12 @@ class Agent:
 
 	def _step(self, obs):
 		self.observed_position = next((x for x in obs.agents if x.is_self), None).position
-		return self.step(obs)
+
+		#saves the action to the history
+		action = self.step(obs)
+		self.history.append(action)
+
+		return action
 
 	def step(self, obs):
 		raise NotImplemented("You must implement an agent")

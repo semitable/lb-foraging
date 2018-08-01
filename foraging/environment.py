@@ -28,7 +28,7 @@ class Env:
 
 	action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
 	Observation = namedtuple("Observation", ['field', 'actions', 'agents', 'game_over'])
-	AgentObservation = namedtuple("AgentObservation", ['position', 'level', 'is_self'])
+	AgentObservation = namedtuple("AgentObservation", ['position', 'level', 'history', 'is_self'])
 
 	def __init__(self, agents, max_agent_level, field_size, max_food, max_food_level, sight):
 		self.logger = logging.getLogger(__name__)
@@ -154,7 +154,7 @@ class Env:
 	def _make_obs(self, agent):
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
-			agents=[self.AgentObservation(position=self._transform_to_neighborhood(agent.position, self.sight,a.position), level=a.level, is_self=a==agent) for a in self.agents if min(self._transform_to_neighborhood(agent.position, self.sight,a.position)) >= 0],  # todo also check max?
+			agents=[self.AgentObservation(position=self._transform_to_neighborhood(agent.position, self.sight,a.position), level=a.level, is_self=a==agent, history=a.history) for a in self.agents if min(self._transform_to_neighborhood(agent.position, self.sight,a.position)) >= 0],  # todo also check max?
 			field=np.copy(self.neighborhood(*agent.position, self.sight)),
 			game_over=self.game_over
 		)
