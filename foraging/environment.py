@@ -30,14 +30,13 @@ class Env:
 	Observation = namedtuple("Observation", ['field', 'actions', 'agents', 'game_over'])
 	AgentObservation = namedtuple("AgentObservation", ['position', 'level', 'history', 'is_self'])
 
-	def __init__(self, agents, max_agent_level, field_size, max_food, max_food_level, sight):
+	def __init__(self, agents, max_agent_level, field_size, max_food, sight):
 		self.logger = logging.getLogger(__name__)
 		self.agent_classes = agents
 		self.agents = []
 		self.field = np.zeros(field_size, np.int32)
 
 		self.max_food = max_food
-		self.max_food_level = max_food_level
 		self.max_agent_level = max_agent_level
 		self.sight = sight
 		self._game_over = None
@@ -161,8 +160,8 @@ class Env:
 
 	def reset(self):
 		self.field = np.zeros(self.field_size, np.int32)
-		self.spawn_food(self.max_food, self.max_food_level)
 		self.spawn_agents(self.max_agent_level)
+		self.spawn_food(self.max_food, max_level=sum([agent.level for agent in self.agents]))
 		self.current_step = 0
 		self._game_over = False
 

@@ -32,8 +32,7 @@ def _game_loop(env, render):
 
 
 def main(game_count=1, render=False):
-	env = Env(agents=(H1, H2, H3, H4, QAgent), max_agent_level=4, field_size=(12, 8), max_food=8,
-			  max_food_level=6, sight=5)
+	env = Env(agents=(H1, H2, H3, H4, QAgent), max_agent_level=4, field_size=(8, 8), max_food=8, sight=5)
 
 	efficiency = defaultdict(list)
 
