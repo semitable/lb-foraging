@@ -39,7 +39,7 @@ class QLearningTable:
 
 		if np.random.uniform() < self.epsilon:
 			# choose best action
-			state_action = self.q_table.ix[observation, :]
+			state_action = self.q_table.loc[observation, :]
 
 			# some actions have the same value
 			state_action = state_action.reindex(np.random.permutation(state_action.index))
@@ -58,11 +58,11 @@ class QLearningTable:
 		q_predict = self.q_table.ix[s, a]
 
 		if s_ != 'terminal':
-			q_target = r + self.gamma * self.q_table.ix[s_, :].max()
+			q_target = r + self.gamma * self.q_table.loc[s_, :].max()
 		else:
 			q_target = r  # next state is terminal
 		# update
-		self.q_table.ix[s, a] += self.lr * (q_target - q_predict)
+		self.q_table.loc[s, a] += self.lr * (q_target - q_predict)
 
 	def check_state_exist(self, state):
 		if state not in self.q_table.index:
@@ -79,7 +79,6 @@ class QAgent(Agent):
 
 		self.Q = QLearningTable(actions=Action)
 		self._prev_score = 0
-		self._prev_action = None
 		self._prev_state = None
 
 	def _make_state(self, obs):
@@ -94,11 +93,12 @@ class QAgent(Agent):
 		return hash(tuple(state))
 
 	def step(self, obs):
+
 		state = self._make_state(obs)
 
-		if self._prev_action is not None:
+		if self.history:
 			reward = self.score - self._prev_score
-			self.Q.learn(self._prev_state, self._prev_action, reward, state)
+			self.Q.learn(self._prev_state, self.history[-1], reward, state)
 
 		if obs.game_over:
 			self.Q.save()
@@ -107,7 +107,6 @@ class QAgent(Agent):
 		action = rl_action if rl_action in obs.actions else Action.NONE
 
 		self._prev_score = self.score
-		self._prev_action = rl_action
 		self._prev_state = state
 
 		return action
