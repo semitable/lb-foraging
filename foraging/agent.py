@@ -11,11 +11,12 @@ class Agent:
 	def __repr__(self):
 		return self.name
 
-	def __init__(self, position, level):
+	def __init__(self, position, level, field_size):
 		self.logger = logging.getLogger(__name__)
 		self.visibility = _MAX_INT
 		self.position = position
 		self.level = level
+		self.field_size = field_size
 		self.score = 0
 
 	def _step(self, obs):

@@ -126,7 +126,7 @@ class Env:
 				row = randint(0, self.rows - 1)
 				col = randint(0, self.cols - 1)
 				if self._is_empty_location(row, col):
-					agent = agent_cls((row, col), randint(1, max_agent_level))
+					agent = agent_cls((row, col), randint(1, max_agent_level), self.field_size)
 					self.agents.append(agent)
 					break
 				attempts += 1
@@ -154,7 +154,7 @@ class Env:
 	def _make_obs(self, agent):
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(agent, action)],
-			agents=[self.AgentObservation(position=self._transform_to_neighborhood(agent.position, self.sight,a.position), level=a.level, is_self=a==agent) for a in self.agents if min(self._transform_to_neighborhood(agent.position, self.sight,a.position)) >= 0],
+			agents=[self.AgentObservation(position=self._transform_to_neighborhood(agent.position, self.sight,a.position), level=a.level, is_self=a==agent) for a in self.agents if min(self._transform_to_neighborhood(agent.position, self.sight,a.position)) >= 0],  # todo also check max?
 			field=np.copy(self.neighborhood(*agent.position, self.sight)),
 			game_over=self.game_over
 		)

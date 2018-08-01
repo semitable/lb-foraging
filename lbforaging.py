@@ -1,10 +1,12 @@
 import argparse
 import time
 from collections import defaultdict
-
-from agents import H1, H2, H3, H4, RandomAgent
-from foraging import Env
+from tqdm import tqdm
 import numpy as np
+
+from agents import H1, H2, H3, H4, QAgent
+from foraging import Env
+
 _MAX_STEPS = 100
 
 
@@ -24,14 +26,18 @@ def _game_loop(env, render):
 		if env.game_over:
 			break
 
+	# loop once more so that agents record the game over event
+	for i, agent in enumerate(env.agents):
+		agent._step(obs[i])
+
 
 def main(game_count=1, render=False):
-	env = Env(agents=(H1, H2, H3, H4, RandomAgent), max_agent_level=4, field_size=(12, 8), max_food=8,
+	env = Env(agents=(H1, H2, H3, H4, QAgent), max_agent_level=4, field_size=(12, 8), max_food=8,
 			  max_food_level=6, sight=5)
 
 	efficiency = defaultdict(list)
 
-	for _ in range(game_count):
+	for _ in tqdm(range(game_count)):
 		_game_loop(env, render)
 
 		for agent in env.agents:
