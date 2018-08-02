@@ -20,6 +20,24 @@ class Action(Enum):
 	EAST = E = 4
 	LOAD = 5
 
+class Player:
+	def __init__(self, position, level, field_size):
+		self.controller = None
+		self.history = []
+		self.position = position
+		self.level = level
+		self.field_size = field_size
+		self.score = 0
+
+	def set_controller(self, controller):
+		self.controller = controller
+
+	def step(self, obs):
+		return self.controller._step(obs)
+
+	@property
+	def name(self):
+		return self.controller.name
 
 class Env:
 	"""
@@ -27,17 +45,18 @@ class Env:
 	"""
 
 	action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
-	Observation = namedtuple("Observation", ['field', 'actions', 'agents', 'game_over'])
-	AgentObservation = namedtuple("AgentObservation", ['position', 'level', 'history', 'is_self'])
+	Observation = namedtuple("Observation", ['field', 'actions', 'players', 'game_over'])
+	PlayerObservation = namedtuple("PlayerObservation", ['position', 'level', 'history', 'is_self'])
 
-	def __init__(self, agents, max_agent_level, field_size, max_food, sight):
+	def __init__(self, player_count, max_player_level, field_size, max_food, sight):
 		self.logger = logging.getLogger(__name__)
-		self.agent_classes = agents
-		self.agents = []
+		self.player_count = player_count
+
+		self.players = []
 		self.field = np.zeros(field_size, np.int32)
 
 		self.max_food = max_food
-		self.max_agent_level = max_agent_level
+		self.max_player_level = max_player_level
 		self.sight = sight
 		self._game_over = None
 
@@ -81,10 +100,10 @@ class Env:
 		elif col < self.cols - 1 and self.field[row, col + 1] > 0:
 			return row, col + 1
 
-	def adjacent_agents(self, row, col):
-		return [agent for agent in self.agents if
-				abs(agent.position[0] - row) == 1 and agent.position[1] == col or
-				abs(agent.position[1] - col) == 1 and agent.position[0] == row
+	def adjacent_players(self, row, col):
+		return [player for player in self.players if
+				abs(player.position[0] - row) == 1 and player.position[1] == col or
+				abs(player.position[1] - col) == 1 and player.position[0] == row
 				]
 
 	def spawn_food(self, max_food, max_level):
@@ -98,7 +117,7 @@ class Env:
 			col = randint(1, self.cols - 2)
 
 			# check if it has neighbors:
-			if self.neighborhood(row, col, distance=2).sum() > 0:
+			if self.neighborhood(row, col, distance=2).sum() > 0 or not self._is_empty_location(row, col):
 				continue
 
 			self.field[row, col] = randint(1, max_level)
@@ -108,16 +127,16 @@ class Env:
 
 		if self.field[row, col] != 0:
 			return False
-		for a in self.agents:
+		for a in self.players:
 			if row == a.position[0] and col == a.position[1]:
 				return False
 
 		return True
 
-	def spawn_agents(self, max_agent_level):
-		self.agents = []
+	def spawn_players(self, max_player_level):
+		self.players = []
 
-		for agent_cls in self.agent_classes:
+		for _ in range(self.player_count):
 
 			attempts = 0
 
@@ -125,117 +144,117 @@ class Env:
 				row = randint(0, self.rows - 1)
 				col = randint(0, self.cols - 1)
 				if self._is_empty_location(row, col):
-					agent = agent_cls((row, col), randint(1, max_agent_level), self.field_size)
-					self.agents.append(agent)
+					player = Player((row, col), randint(1, max_player_level), self.field_size)
+					self.players.append(player)
 					break
 				attempts += 1
 
-	def _is_valid_action(self, agent, action):
+	def _is_valid_action(self, player, action):
 		if action == Action.NONE:
 			return True
 		if action == Action.NORTH:
-			return agent.position[0] > 0 and self.field[agent.position[0] - 1, agent.position[1]] == 0
+			return player.position[0] > 0 and self.field[player.position[0] - 1, player.position[1]] == 0
 		elif action == Action.SOUTH:
-			return agent.position[0] < self.rows - 1 and self.field[agent.position[0] + 1, agent.position[1]] == 0
+			return player.position[0] < self.rows - 1 and self.field[player.position[0] + 1, player.position[1]] == 0
 		elif action == Action.WEST:
-			return agent.position[1] > 0 and self.field[agent.position[0], agent.position[1] - 1] == 0
+			return player.position[1] > 0 and self.field[player.position[0], player.position[1] - 1] == 0
 		elif action == Action.EAST:
-			return agent.position[1] < self.cols - 1 and self.field[agent.position[0], agent.position[1] + 1] == 0
+			return player.position[1] < self.cols - 1 and self.field[player.position[0], player.position[1] + 1] == 0
 		elif action == Action.LOAD:
-			return self.adjacent_food(*agent.position) > 0
+			return self.adjacent_food(*player.position) > 0
 
-		self.logger.error("Undefined action {} from {}".format(action, agent.name))
+		self.logger.error("Undefined action {} from {}".format(action, player.name))
 		raise ValueError("Undefined action")
 
 	def _transform_to_neighborhood(self, center, sight, position):
 		return (position[0]-center[0]+min(sight, center[0]), position[1]-center[1]+min(sight, center[1]))
 
-	def _make_obs(self, agent):
+	def _make_obs(self, player):
 		return self.Observation(
-			actions=[action for action in Action if self._is_valid_action(agent, action)],
-			agents=[self.AgentObservation(position=self._transform_to_neighborhood(agent.position, self.sight,a.position), level=a.level, is_self=a==agent, history=a.history) for a in self.agents if min(self._transform_to_neighborhood(agent.position, self.sight,a.position)) >= 0],  # todo also check max?
-			field=np.copy(self.neighborhood(*agent.position, self.sight)),
+			actions=[action for action in Action if self._is_valid_action(player, action)],
+			players=[self.PlayerObservation(position=self._transform_to_neighborhood(player.position, self.sight,a.position), level=a.level, is_self=a==player, history=a.history) for a in self.players if min(self._transform_to_neighborhood(player.position, self.sight,a.position)) >= 0],  # todo also check max?
+			field=np.copy(self.neighborhood(*player.position, self.sight)),
 			game_over=self.game_over
 		)
 
 	def reset(self):
 		self.field = np.zeros(self.field_size, np.int32)
-		self.spawn_agents(self.max_agent_level)
-		self.spawn_food(self.max_food, max_level=sum([agent.level for agent in self.agents]))
+		self.spawn_players(self.max_player_level)
+		self.spawn_food(self.max_food, max_level=sum([player.level for player in self.players]))
 		self.current_step = 0
 		self._game_over = False
 
-		return [self._make_obs(agent) for agent in self.agents]
+		return [self._make_obs(player) for player in self.players]
 
 	def step(self, actions):
 		self.current_step += 1
 
 		# check if actions are valid
-		for agent, action in zip(self.agents, actions):
-			if not self._is_valid_action(agent, action):
-				self.logger.error('{}{} attempted invalid action {}.'.format(agent.name, agent.position, action))
+		for player, action in zip(self.players, actions):
+			if not self._is_valid_action(player, action):
+				self.logger.error('{}{} attempted invalid action {}.'.format(player.name, player.position, action))
 				self.logger.error(self.field)
 				raise ValueError("Invalid action attempted")
 
 			# also give a negative reward if action is not LOAD
 			if action != Action.LOAD:
-				agent.score -= 0.01
+				player.score -= 0.01
 
-		loading_agents = set()
+		loading_players = set()
 
-		# move agents
-		# if two or more agents try to move to the same location they all fail
+		# move players
+		# if two or more players try to move to the same location they all fail
 		collisions = defaultdict(list)
 
 		# so check for collisions
-		for agent, action in zip(self.agents, actions):
+		for player, action in zip(self.players, actions):
 			if action == Action.NONE:
-				collisions[agent.position].append(agent)
+				collisions[player.position].append(player)
 			elif action == Action.NORTH:
-				collisions[(agent.position[0] - 1, agent.position[1])].append(agent)
+				collisions[(player.position[0] - 1, player.position[1])].append(player)
 			elif action == Action.SOUTH:
-				collisions[(agent.position[0] + 1, agent.position[1])].append(agent)
+				collisions[(player.position[0] + 1, player.position[1])].append(player)
 			elif action == Action.WEST:
-				collisions[(agent.position[0], agent.position[1] - 1)].append(agent)
+				collisions[(player.position[0], player.position[1] - 1)].append(player)
 			elif action == Action.EAST:
-				collisions[(agent.position[0], agent.position[1] + 1)].append(agent)
+				collisions[(player.position[0], player.position[1] + 1)].append(player)
 			elif action == Action.LOAD:
-				collisions[agent.position].append(agent)
-				loading_agents.add(agent)
+				collisions[player.position].append(player)
+				loading_players.add(player)
 
-		# and do movements for non colliding agents
+		# and do movements for non colliding players
 
 		for k, v in collisions.items():
-			if len(v) > 1:  # make sure no more than an agent will arrive at location
+			if len(v) > 1:  # make sure no more than an player will arrive at location
 				continue
 			v[0].position = k
 
 		# finally process the loadings:
-		while loading_agents:
+		while loading_players:
 			# find adjacent food
-			agent = loading_agents.pop()
-			frow, fcol = self.adjacent_food_location(*agent.position)
+			player = loading_players.pop()
+			frow, fcol = self.adjacent_food_location(*player.position)
 			food = self.field[frow, fcol]
 
-			adj_agents = self.adjacent_agents(frow, fcol)
+			adj_players = self.adjacent_players(frow, fcol)
 
-			adj_agent_level = sum([a.level for a in adj_agents])
+			adj_player_level = sum([a.level for a in adj_players])
 
-			loading_agents = loading_agents - set(adj_agents)
+			loading_players = loading_players - set(adj_players)
 
-			if adj_agent_level < food:
+			if adj_player_level < food:
 				# failed to load
 				continue
 
-			# else the food was loaded and each agent scores points
-			for a in adj_agents:
+			# else the food was loaded and each player scores points
+			for a in adj_players:
 				a.score += food
 			# and the food is removed
 			self.field[frow, fcol] = 0
 
 		self._game_over = self.field.sum() == 0
 
-		return [self._make_obs(agent) for agent in self.agents]
+		return [self._make_obs(player) for player in self.players]
 
 	def _init_render(self):
 
@@ -268,11 +287,11 @@ class Env:
 						(self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
 					)
 
-	def _draw_agents(self):
-		for agent in self.agents:
-			r, c = agent.position
+	def _draw_players(self):
+		for player in self.players:
+			r, c = player.position
 			self._screen.blit(
-				self._font.render(str(agent.level), 1, _RED),
+				self._font.render(str(player.level), 1, _RED),
 				(self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
 			)
 
@@ -283,6 +302,6 @@ class Env:
 		self._screen.fill(_BLACK)
 		self._draw_grid()
 		self._draw_food()
-		self._draw_agents()
+		self._draw_players()
 
 		pygame.display.flip()

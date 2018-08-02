@@ -13,10 +13,13 @@ _MAX_STEPS = 100
 def _game_loop(env, render):
 	obs = env.reset()
 
+	for player in env.players:
+		player.set_controller(H1(player))
+
 	for _ in range(_MAX_STEPS):
 		actions = []
-		for i, agent in enumerate(env.agents):
-			actions.append(agent._step(obs[i]))
+		for i, player in enumerate(env.players):
+			actions.append(player.step(obs[i]))
 		obs = env.step(actions)
 
 		if render:
@@ -27,22 +30,29 @@ def _game_loop(env, render):
 			break
 
 	# loop once more so that agents record the game over event
-	for i, agent in enumerate(env.agents):
-		agent._step(obs[i])
+	for i, player in enumerate(env.players):
+		player.step(obs[i])
+
+def evaluate(agent, types, max_agent_level=5, field_size=(8,8), food_count=5, sight=None):
+
+	if sight == None:
+		sight = max(*field_size)
+	pass
 
 
 def main(game_count=1, render=False):
-	env = Env(agents=(H1, H2, H3, H4, QAgent), max_agent_level=4, field_size=(8, 8), max_food=8, sight=5)
+	env = Env(player_count=2, max_player_level=4, field_size=(8, 8), max_food=5, sight=5)
 
 	efficiency = defaultdict(list)
 
-	for _ in tqdm(range(game_count)):
+	pbar = tqdm if game_count > 1 else (lambda x: x) # use tqdm for game_count >1
+
+	for _ in pbar(range(game_count)):
 		_game_loop(env, render)
 
-		for agent in env.agents:
-			efficiency[agent.name].append(agent.score / env.current_step)
+		for player in env.players:
+			efficiency[player.name].append(player.score / env.current_step)
 
-		env.reset()
 
 	for k, v in efficiency.items():
 		print("Agent: {} - Efficiency: {}".format(k, np.mean(v)))

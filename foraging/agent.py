@@ -11,17 +11,15 @@ class Agent:
 	def __repr__(self):
 		return self.name
 
-	def __init__(self, position, level, field_size):
+	def __init__(self, player):
 		self.logger = logging.getLogger(__name__)
-		self.history = []
-		self.visibility = _MAX_INT
-		self.position = position
-		self.level = level
-		self.field_size = field_size
-		self.score = 0
+		self.player = player
+
+	def __getattr__(self, item):
+		return getattr(self.player, item)
 
 	def _step(self, obs):
-		self.observed_position = next((x for x in obs.agents if x.is_self), None).position
+		self.observed_position = next((x for x in obs.players if x.is_self), None).position
 
 		#saves the action to the history
 		action = self.step(obs)
