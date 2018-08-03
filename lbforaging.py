@@ -63,7 +63,7 @@ def evaluate(players, game_count, render, max_agent_level=5, field_size=(8, 8), 
 	if sight == None:
 		sight = max(*field_size)
 
-	env = Env(players=players, max_player_level=4, field_size=(8, 8), max_food=5, sight=5)
+	env = Env(players=players, max_player_level=4, field_size=(8, 8), max_food=5, sight=sight)
 
 	efficiency = 0
 	flexibility = 0
