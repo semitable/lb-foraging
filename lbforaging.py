@@ -10,7 +10,7 @@ from agents import H1, H2, H3, H4, QAgent
 from foraging import Env, Player
 import logging
 
-_MAX_STEPS = 100
+_MAX_STEPS = 1000
 
 logger = logging.getLogger(__name__)
 
@@ -61,11 +61,15 @@ def _game_loop(env, render):
 		player.step(obs[i])
 
 
-def evaluate(players, game_count, render, max_agent_level=5, field_size=(8, 8), food_count=5, sight=None):
-	if sight == None:
+def evaluate(players, game_count, render, max_player_level=None, field_size=(8, 8), food_count=5, sight=None):
+
+	if sight is None:
 		sight = max(*field_size)
 
-	env = Env(players=players, max_player_level=4, field_size=(8, 8), max_food=5, sight=sight)
+	if max_player_level is None:
+		max_player_level = len(players) # max player level becomes the number of players
+
+	env = Env(players=players, max_player_level=max_player_level, field_size=(8, 8), max_food=5, sight=sight)
 
 	efficiency = 0
 	flexibility = 0
