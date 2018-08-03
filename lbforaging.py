@@ -8,9 +8,11 @@ from tqdm import tqdm
 
 from agents import H1, H2, H3, H4, QAgent
 from foraging import Env, Player
+import logging
 
 _MAX_STEPS = 100
 
+logger = logging.getLogger(__name__)
 
 class TypeSpacePlayer(Player):
 	"""
@@ -80,7 +82,7 @@ def evaluate(players, game_count, render, max_agent_level=5, field_size=(8, 8), 
 	efficiency /= game_count
 	flexibility /= game_count
 
-	print("{} - Efficiency: {} - Flexibility: {}".format(players[0].name, efficiency, flexibility))
+	logger.warning("{} - Efficiency: {} - Flexibility: {}".format(players[0].name, efficiency, flexibility))
 
 
 def main(game_count=1, render=False):
