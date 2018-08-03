@@ -269,13 +269,16 @@ class Env:
 	def _init_render(self):
 
 		self.grid_size = 50
-		self.font_size = 20
+		self.name_font_size = 10
+		self.level_font_size = 20
 		pygame.init()
 		self._screen = pygame.display.set_mode(
 			(self.cols * self.grid_size + 1,
 			 self.rows * self.grid_size + 1)
 		)
-		self._font = pygame.font.SysFont("monospace", self.font_size)
+		self._name_font = pygame.font.SysFont("monospace", self.name_font_size)
+		self._level_font = pygame.font.SysFont("monospace", self.level_font_size)
+
 		self._rendering_initialized = True
 
 	def _draw_grid(self):
@@ -293,7 +296,7 @@ class Env:
 					pass
 				elif self.field[r, c] != 0:
 					self._screen.blit(
-						self._font.render(str(self.field[r, c]), 1, _GREEN),
+						self._level_font.render(str(self.field[r, c]), 1, _GREEN),
 						(self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
 					)
 
@@ -301,8 +304,12 @@ class Env:
 		for player in self.players:
 			r, c = player.position
 			self._screen.blit(
-				self._font.render(str(player.level), 1, _RED),
+				self._level_font.render(str(player.level), 1, _RED),
 				(self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
+			)
+			self._screen.blit(
+				self._name_font.render(str(player.name), 1, _WHITE),
+				(self.grid_size * c + self.grid_size // 3 - 5, self.grid_size * r + self.grid_size // 3 + 20)
 			)
 
 	def render(self):

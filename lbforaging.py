@@ -33,9 +33,6 @@ class TypeSpacePlayer(Player):
 		self.next_change -= 1
 		return super().step(obs)
 
-	@property
-	def name(self):
-		return str([a.name for a in self.type_space])
 
 
 def _game_loop(env, render):
