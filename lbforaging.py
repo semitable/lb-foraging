@@ -73,13 +73,14 @@ def evaluate(players, game_count, render, max_agent_level=5, field_size=(8, 8), 
 	for _ in pbar(range(game_count)):
 		_game_loop(env, render)
 
-		for player in env.players:
-			efficiency += player.score / env.current_step
-			if env.current_step < _MAX_STEPS:
-				flexibility += 1
+		efficiency += env.players[0].score / env.current_step
+		if env.current_step < _MAX_STEPS:
+			flexibility += 1
 
+	efficiency /= game_count
+	flexibility /= game_count
 
-	print("{} - Efficiency: {} - Flexibility: {}".format(players[0].name, np.mean(efficiency), np.mean(flexibility)))
+	print("{} - Efficiency: {} - Flexibility: {}".format(players[0].name, efficiency, flexibility))
 
 
 def main(game_count=1, render=False):
