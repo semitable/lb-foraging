@@ -86,7 +86,7 @@ class QAgent(Agent):
 			obs.field.flatten(),
 			[*self.observed_position, self.level],
 			list(chain(*sorted(
-				[(a.position[0], a.position[1], a.level) for a in obs.agents if not a.is_self],
+				[(a.position[0], a.position[1], a.level) for a in obs.players if not a.is_self],
 				key=lambda x: x[0]))
 				 ),
 		))
@@ -96,7 +96,7 @@ class QAgent(Agent):
 
 		state = self._make_state(obs)
 
-		if self.history:
+		if self.history and self._prev_state:
 			reward = self.score - self._prev_score
 			self.Q.learn(self._prev_state, self.history[-1], reward, state)
 

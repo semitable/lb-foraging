@@ -7,8 +7,8 @@ from foraging.environment import Action
 class HeuristicAgent(Agent):
 	name = "Heuristic Agent"
 
-	def _center_of_agents(self, agents):
-		coords = np.array([agent.position for agent in agents])
+	def _center_of_players(self, players):
+		coords = np.array([player.position for player in players])
 		return np.rint(coords.mean(axis=0))
 
 	def _move_towards(self, target, allowed):
@@ -61,10 +61,10 @@ class H2(HeuristicAgent):
 
 	def step(self, obs):
 
-		agents_center = self._center_of_agents(obs.agents)
+		players_center = self._center_of_players(obs.players)
 
 		try:
-			r, c = self._closest_food(obs, None, agents_center)
+			r, c = self._closest_food(obs, None, players_center)
 		except TypeError:
 			return random.choice(obs.actions)
 		y, x = self.observed_position
@@ -110,11 +110,11 @@ class H4(HeuristicAgent):
 
 	def step(self, obs):
 
-		agents_center = self._center_of_agents(obs.agents)
-		agents_sum_level = sum([a.level for a in obs.agents])
+		players_center = self._center_of_players(obs.players)
+		players_sum_level = sum([a.level for a in obs.players])
 
 		try:
-			r, c = self._closest_food(obs, agents_sum_level, agents_center)
+			r, c = self._closest_food(obs, players_sum_level, players_center)
 		except TypeError:
 			return random.choice(obs.actions)
 		y, x = self.observed_position

@@ -1,7 +1,8 @@
+import logging
 from collections import namedtuple, defaultdict
 from enum import Enum
 from random import randint
-import logging
+
 import numpy as np
 import pygame
 
@@ -20,9 +21,16 @@ class Action(Enum):
 	EAST = E = 4
 	LOAD = 5
 
+
 class Player:
-	def __init__(self, position, level, field_size):
+	def __init__(self):
 		self.controller = None
+		self.position = None
+		self.level = None
+		self.field_size = None
+		self.score = None
+
+	def setup(self, position, level, field_size):
 		self.history = []
 		self.position = position
 		self.level = level
@@ -39,6 +47,7 @@ class Player:
 	def name(self):
 		return self.controller.name
 
+
 class Env:
 	"""
 	A class that contains rules/actions for the game level-based foraging.
@@ -48,11 +57,10 @@ class Env:
 	Observation = namedtuple("Observation", ['field', 'actions', 'players', 'game_over'])
 	PlayerObservation = namedtuple("PlayerObservation", ['position', 'level', 'history', 'is_self'])
 
-	def __init__(self, player_count, max_player_level, field_size, max_food, sight):
+	def __init__(self, players, max_player_level, field_size, max_food, sight):
 		self.logger = logging.getLogger(__name__)
-		self.player_count = player_count
+		self.players = players
 
-		self.players = []
 		self.field = np.zeros(field_size, np.int32)
 
 		self.max_food = max_food
@@ -128,15 +136,14 @@ class Env:
 		if self.field[row, col] != 0:
 			return False
 		for a in self.players:
-			if row == a.position[0] and col == a.position[1]:
+			if a.position and row == a.position[0] and col == a.position[1]:
 				return False
 
 		return True
 
 	def spawn_players(self, max_player_level):
-		self.players = []
 
-		for _ in range(self.player_count):
+		for player in self.players:
 
 			attempts = 0
 
@@ -144,8 +151,7 @@ class Env:
 				row = randint(0, self.rows - 1)
 				col = randint(0, self.cols - 1)
 				if self._is_empty_location(row, col):
-					player = Player((row, col), randint(1, max_player_level), self.field_size)
-					self.players.append(player)
+					player.setup((row, col), randint(1, max_player_level), self.field_size)
 					break
 				attempts += 1
 
@@ -167,12 +173,16 @@ class Env:
 		raise ValueError("Undefined action")
 
 	def _transform_to_neighborhood(self, center, sight, position):
-		return (position[0]-center[0]+min(sight, center[0]), position[1]-center[1]+min(sight, center[1]))
+		return (position[0] - center[0] + min(sight, center[0]), position[1] - center[1] + min(sight, center[1]))
 
 	def _make_obs(self, player):
 		return self.Observation(
 			actions=[action for action in Action if self._is_valid_action(player, action)],
-			players=[self.PlayerObservation(position=self._transform_to_neighborhood(player.position, self.sight,a.position), level=a.level, is_self=a==player, history=a.history) for a in self.players if min(self._transform_to_neighborhood(player.position, self.sight,a.position)) >= 0],  # todo also check max?
+			players=[self.PlayerObservation(
+				position=self._transform_to_neighborhood(player.position, self.sight, a.position), level=a.level,
+				is_self=a == player, history=a.history) for a in self.players if
+					 min(self._transform_to_neighborhood(player.position, self.sight, a.position)) >= 0],
+			# todo also check max?
 			field=np.copy(self.neighborhood(*player.position, self.sight)),
 			game_over=self.game_over
 		)
