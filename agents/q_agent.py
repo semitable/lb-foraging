@@ -93,15 +93,11 @@ class QAgent(Agent):
 		return hash(tuple(state))
 
 	def step(self, obs):
-
 		state = self._make_state(obs)
 
 		if self.history and self._prev_state:
 			reward = self.score - self._prev_score
 			self.Q.learn(self._prev_state, self.history[-1], reward, state)
-
-		if obs.game_over:
-			self.Q.save()
 
 		rl_action = self.Q.choose_action(state)
 		action = rl_action if rl_action in obs.actions else Action.NONE
@@ -110,3 +106,6 @@ class QAgent(Agent):
 		self._prev_state = state
 
 		return action
+
+	def cleanup(self):
+		self.Q.save()

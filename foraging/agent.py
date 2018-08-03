@@ -49,3 +49,6 @@ class Agent:
 			return None
 
 		return r[min_idx], c[min_idx]
+
+	def cleanup(self):
+		pass

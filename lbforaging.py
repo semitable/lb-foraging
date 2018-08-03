@@ -79,6 +79,9 @@ def evaluate(players, game_count, render, max_agent_level=5, field_size=(8, 8), 
 		if env.current_step < _MAX_STEPS:
 			flexibility += 1
 
+	for player in env.players:
+		player.controller.cleanup()
+
 	efficiency /= game_count
 	flexibility /= game_count
 
