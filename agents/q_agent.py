@@ -81,19 +81,12 @@ class QAgent(Agent):
 		self._prev_score = 0
 		self._prev_state = None
 
-	def _make_state(self, obs):
-		state = np.concatenate((
-			obs.field.flatten(),
-			[*self.observed_position, self.level],
-			list(chain(*sorted(
-				[(a.position[0], a.position[1], a.level) for a in obs.players if not a.is_self],
-				key=lambda x: x[0]))
-				 ),
-		))
-		return hash(tuple(state))
 
 	def step(self, obs):
 		state = self._make_state(obs)
+
+		u, s = self.simulate(obs, [Action.NONE, Action.NONE])
+		print(u, s)
 
 		if self.history and self._prev_state:
 			reward = self.score - self._prev_score

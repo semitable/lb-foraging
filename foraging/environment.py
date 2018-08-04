@@ -54,14 +54,15 @@ class Env:
 	"""
 
 	action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
-	Observation = namedtuple("Observation", ['field', 'actions', 'players', 'game_over'])
-	PlayerObservation = namedtuple("PlayerObservation", ['position', 'level', 'history', 'is_self'])
+	Observation = namedtuple("Observation", ['field', 'actions', 'players', 'game_over', 'sight', 'current_step'])
+	PlayerObservation = namedtuple("PlayerObservation", ['position', 'level', 'history', 'score', 'is_self']) # score is available only if is_self
 
 	def __init__(self, players, max_player_level, field_size, max_food, sight):
 		self.logger = logging.getLogger(__name__)
 		self.players = players
 
-		self.field = np.zeros(field_size, np.int32)
+		if field_size:
+			self.field = np.zeros(field_size, np.int32)
 
 		self.max_food = max_food
 		self.max_player_level = max_player_level
@@ -69,6 +70,24 @@ class Env:
 		self._game_over = None
 
 		self._rendering_initialized = False
+
+	@classmethod
+	def from_obs(cls, obs):
+
+		players = []
+		for p in obs.players:
+			player = Player()
+			player.setup(p.position, p.level, obs.field.shape)
+			player.score = p.score if p.score else 0
+			players.append(player)
+
+
+		env = cls(players, None, None, None, None)
+		env.field = np.copy(obs.field)
+		env.current_step = obs.current_step
+		env.sight = obs.sight
+
+		return env
 
 	@property
 	def field_size(self):
@@ -180,11 +199,13 @@ class Env:
 			actions=[action for action in Action if self._is_valid_action(player, action)],
 			players=[self.PlayerObservation(
 				position=self._transform_to_neighborhood(player.position, self.sight, a.position), level=a.level,
-				is_self=a == player, history=a.history) for a in self.players if
+				is_self=a == player, history=a.history, score=a.score if a == player else None) for a in self.players if
 					 min(self._transform_to_neighborhood(player.position, self.sight, a.position)) >= 0],
 			# todo also check max?
 			field=np.copy(self.neighborhood(*player.position, self.sight)),
-			game_over=self.game_over
+			game_over=self.game_over,
+			sight=self.sight,
+			current_step=self.current_step,
 		)
 
 	def reset(self):
