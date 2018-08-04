@@ -66,7 +66,7 @@ def evaluate(players, game_count, render, max_player_level=None, field_size=(8, 
 	if max_player_level is None:
 		max_player_level = len(players) # max player level becomes the number of players
 
-	env = Env(players=players, max_player_level=max_player_level, field_size=(8, 8), max_food=5, sight=sight)
+	env = Env(players=players, max_player_level=max_player_level, field_size=(8, 8), max_food=food_count, sight=sight)
 
 	efficiency = 0
 	flexibility = 0
