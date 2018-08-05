@@ -1,6 +1,6 @@
 import logging
 from collections import namedtuple, defaultdict
-from enum import Enum
+from enum import IntEnum
 from random import randint
 
 import numpy as np
@@ -13,7 +13,7 @@ _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
 
 
-class Action(Enum):
+class Action(IntEnum):
 	NONE = 0
 	NORTH = N = 1
 	SOUTH = S = 2
@@ -45,8 +45,10 @@ class Player:
 
 	@property
 	def name(self):
-		return self.controller.name
-
+		if self.controller:
+			return self.controller.name
+		else:
+			return "Player"
 
 class Env:
 	"""
@@ -333,7 +335,7 @@ class Env:
 				(self.grid_size * c + self.grid_size // 3 - 5, self.grid_size * r + self.grid_size // 3 + 20)
 			)
 
-	def render(self):
+	def render(self, text=None):
 		if not self._rendering_initialized:
 			self._init_render()
 
@@ -341,5 +343,11 @@ class Env:
 		self._draw_grid()
 		self._draw_food()
 		self._draw_players()
+		if text:
+			self._screen.blit(
+				self._name_font.render(text, 1, _RED),
+				(5, 5)
+			)
+
 
 		pygame.display.flip()
