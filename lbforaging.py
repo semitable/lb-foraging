@@ -40,6 +40,10 @@ def _game_loop(env, render):
 	"""
 	obs = env.reset()
 
+	if render:
+		env.render()
+		time.sleep(1)
+
 	for _ in range(_MAX_STEPS):
 		actions = []
 		for i, player in enumerate(env.players):
@@ -47,8 +51,8 @@ def _game_loop(env, render):
 		obs = env.step(actions)
 
 		if render:
-			time.sleep(1)
 			env.render()
+			time.sleep(1)
 
 		if env.game_over:
 			break
@@ -58,7 +62,7 @@ def _game_loop(env, render):
 		player.step(obs[i])
 
 
-def evaluate(players, game_count, render, max_player_level=None, field_size=(8, 8), food_count=5, sight=None):
+def evaluate(players, game_count, render, max_player_level=None, field_size=(5, 5), food_count=1, sight=None):
 
 	if sight is None:
 		sight = max(*field_size)
@@ -66,7 +70,7 @@ def evaluate(players, game_count, render, max_player_level=None, field_size=(8, 
 	if max_player_level is None:
 		max_player_level = len(players) # max player level becomes the number of players
 
-	env = Env(players=players, max_player_level=max_player_level, field_size=(8, 8), max_food=food_count, sight=sight)
+	env = Env(players=players, max_player_level=max_player_level, field_size=field_size, max_food=food_count, sight=sight)
 
 	efficiency = 0
 	flexibility = 0
@@ -93,7 +97,7 @@ def main(game_count=1, render=False):
 	p0 = Player()
 	p0.set_controller(QAgent(p0))
 
-	p1 = TypeSpacePlayer([H1, H2, H3, H4], lambda: random.randint(10, 20))
+	p1 = TypeSpacePlayer([H1], lambda: random.randint(10, 20))
 
 	evaluate([p0, p1], game_count, render)
 

@@ -1,6 +1,6 @@
 import logging
 from collections import namedtuple, defaultdict
-from enum import IntEnum
+from enum import IntEnum, Enum
 from random import randint
 
 import numpy as np
@@ -13,12 +13,11 @@ _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
 
 
-class Action(IntEnum):
-	NONE = 0
-	NORTH = N = 1
-	SOUTH = S = 2
-	WEST = W = 3
-	EAST = E = 4
+class Action(Enum):
+	NORTH = 1
+	SOUTH = 2
+	WEST = 3
+	EAST = 4
 	LOAD = 5
 
 
@@ -177,8 +176,7 @@ class Env:
 				attempts += 1
 
 	def _is_valid_action(self, player, action):
-		if action == Action.NONE:
-			return True
+
 		if action == Action.NORTH:
 			return player.position[0] > 0 and self.field[player.position[0] - 1, player.position[1]] == 0
 		elif action == Action.SOUTH:
@@ -241,9 +239,9 @@ class Env:
 
 		# so check for collisions
 		for player, action in zip(self.players, actions):
-			if action == Action.NONE:
-				collisions[player.position].append(player)
-			elif action == Action.NORTH:
+			# if action == Action.NONE:
+			# 	collisions[player.position].append(player)
+			if action == Action.NORTH:
 				collisions[(player.position[0] - 1, player.position[1])].append(player)
 			elif action == Action.SOUTH:
 				collisions[(player.position[0] + 1, player.position[1])].append(player)
@@ -270,6 +268,7 @@ class Env:
 			food = self.field[frow, fcol]
 
 			adj_players = self.adjacent_players(frow, fcol)
+			adj_players = [p for p in adj_players if p in loading_players or p is player]
 
 			adj_player_level = sum([a.level for a in adj_players])
 

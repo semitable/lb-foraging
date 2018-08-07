@@ -1,8 +1,9 @@
 import logging
-from . import Env, Player
-import numpy as np
-from copy import deepcopy
 from itertools import chain
+
+import numpy as np
+
+from . import Env
 
 _MAX_INT = 999999
 
@@ -23,7 +24,7 @@ class Agent:
 	def _step(self, obs):
 		self.observed_position = next((x for x in obs.players if x.is_self), None).position
 
-		#saves the action to the history
+		# saves the action to the history
 		action = self.step(obs)
 		self.history.append(action)
 
@@ -55,27 +56,9 @@ class Agent:
 	def _make_state(self, obs):
 		state = np.concatenate((
 			obs.field.flatten(),
-			[*self.observed_position, self.level],
-			list(chain(*sorted(
-				[(a.position[0], a.position[1], a.level) for a in obs.players if not a.is_self],
-				key=lambda x: x[0]))
-				 ),
+			*[(a.position[0], a.position[1], a.level) for a in obs.players]
 		))
-		return hash(tuple(state))
-
-	def simulate(self, obs, actions):
-		assert len(actions) == len(obs.players)
-
-		player_no = next(i for i, x in enumerate(obs.players) if x.is_self)
-
-		env = Env.from_obs(obs)
-		env.step(actions)
-
-		reward = env.players[player_no].score - self.score
-		new_state = self._make_state(env._make_obs(env.players[player_no]))
-		print(reward)
-		return reward, new_state
-
+		return str(tuple(state))
 
 
 	def cleanup(self):
