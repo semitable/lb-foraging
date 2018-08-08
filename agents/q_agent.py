@@ -38,11 +38,14 @@ class QLearningTable:
 
 			# some actions have the same value
 			# state_action = state_action.reindex(np.random.permutation(state_action.index))
+			max_reward = state_action.max()
 
-			action = state_action.idxmax()
 
-			# print("CHOOSING BEST ACTION {} for STATE {} with R: {}".format(action, observation, max(state_action)))
+			action = random.choice(state_action[state_action == max_reward].index)
+			# if e==0:
+			# 	print("CHOOSING BEST ACTION {} for STATE {} with R: {}".format(action, observation, max(state_action)))
 		else:
+
 			# choose random action
 			action = self.actions[np.random.randint(len(self.actions))]
 			# print("RANDOM ACTION", action)

@@ -62,7 +62,7 @@ def _game_loop(env, render):
 		player.step(obs[i])
 
 
-def evaluate(players, game_count, render, max_player_level=None, field_size=(5, 5), food_count=1, sight=None):
+def evaluate(players, game_count, render, max_player_level=None, field_size=(8, 8), food_count=5, sight=None):
 
 	if sight is None:
 		sight = max(*field_size)
