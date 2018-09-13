@@ -1,6 +1,6 @@
 import random
 
-from foraging import Agent
+from lb_foraging import Agent
 
 
 class RandomAgent(Agent):

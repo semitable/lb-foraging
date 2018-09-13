@@ -8,6 +8,9 @@ numpy = "*"
 pygame = "*"
 pandas = "*"
 tqdm = "*"
+networkx = "*"
+gym = "*"
+jupyter = "*"
 
 [dev-packages]
 jupyter = "*"

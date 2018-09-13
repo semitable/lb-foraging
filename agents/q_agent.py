@@ -4,8 +4,7 @@ from itertools import chain, repeat, product
 import numpy as np
 import pandas as pd
 import random
-from foraging import Agent, Env
-from foraging.environment import Action
+from lb_foraging import Agent, LBForagingEnv, Action
 from agents import H1, H2, H3, H4
 
 _CACHE = None
