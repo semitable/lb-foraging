@@ -5,14 +5,94 @@ from copy import copy, deepcopy
 import math
 import time
 import numpy as np
+import plotly.offline as py
 import pandas as pd
 import random
 from foraging import Agent, Env
 from foraging.environment import Action
 from agents import H1, H2, H3, H4
 import networkx as nx
+import plotly.graph_objs as go
+from networkx.drawing.nx_pydot import graphviz_layout
 
 logger = logging.getLogger(__name__)
+
+def plot_graph(G):
+    pos = graphviz_layout(G, prog='dot')
+
+    edge_trace = go.Scatter(
+        x=[],
+        y=[],
+        line=go.Line(width=0.5, color='#888'),
+        hoverinfo='none',
+        mode='lines')
+
+    my_annotations = []
+
+    for edge in G.edges():
+        x0, y0 = pos[edge[0]]
+        x1, y1 = pos[edge[1]]
+        edge_trace['x'] += (x0, x1, None)
+        edge_trace['y'] += (y0, y1, None)
+        my_annotations.append(
+            dict(
+                x=(x0 + x1) / 2,
+                y=(y0 + y1) / 2,
+                xref='x',
+                yref='y',
+                text='{}'.format(G.get_edge_data(edge[0], edge[1])['action']),
+                showarrow=False,
+                arrowhead=2,
+                ax=0,
+                ay=0
+            )
+        )
+
+    node_trace = go.Scatter(
+        x=[],
+        y=[],
+        text=[],
+        mode='markers',
+        hoverinfo='text',
+        marker=go.Marker(
+            showscale=False,
+            # colorscale options
+            # 'Greys' | 'Greens' | 'Bluered' | 'Hot' | 'Picnic' | 'Portland' |
+            # Jet' | 'RdBu' | 'Blackbody' | 'Earth' | 'Electric' | 'YIOrRd' | 'YIGnBu'
+            colorscale='YIGnBu',
+            reversescale=True,
+            color=[],
+            size=10,
+            colorbar=dict(
+                thickness=15,
+                title='Node Connections',
+                xanchor='left',
+                titleside='right'
+            ),
+            line=dict(width=2)))
+
+    for node in G.nodes():
+        x, y = pos[node]
+        node_trace['x'].append(x)
+        node_trace['y'].append(y)
+
+        node_info = "Visits: +{0}<br>Rewards: {1}<br>Score: {2}".format(node.visits, node.reward, node.state.players[0].score)
+
+        node_trace['text'].append(node_info)
+
+    fig = go.Figure(data=go.Data([edge_trace, node_trace]),
+                    layout=go.Layout(
+                        title='<br>Network graph made with Python',
+                        titlefont=dict(size=16),
+                        showlegend=False,
+                        width=650,
+                        height=650,
+                        hovermode='closest',
+                        margin=dict(b=20, l=5, r=5, t=40),
+                        annotations=my_annotations,
+                        xaxis=go.XAxis(showgrid=False, zeroline=False, showticklabels=False),
+                        yaxis=go.YAxis(showgrid=False, zeroline=False, showticklabels=False)))
+    return fig
 
 
 class Node:
@@ -108,7 +188,7 @@ class MonteCarloAgent(Agent):
 
         return move[my_id]
 
-    def uct_search(self, state: Env, timeout=30):
+    def uct_search(self, state: Env, timeout=10):
         graph = nx.DiGraph()
 
         root = Node(state)
@@ -133,6 +213,7 @@ class MonteCarloAgent(Agent):
             # back propagation
             self.backup(u_next, delta)
 
+        py.plot(plot_graph(graph))
         return root
 
     def backup(self, u: Node, delta: float):

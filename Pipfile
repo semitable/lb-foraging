@@ -8,6 +8,8 @@ numpy = "*"
 pygame = "*"
 pandas = "*"
 tqdm = "*"
+pydot = "*"
+plotly = "<=2.7.*"
 
 [dev-packages]
 jupyter = "*"
