@@ -124,7 +124,7 @@ class Node:
     def expand(self):
         unchecked_moves = self.available_moves - self.tried_moves
 
-        move = random.sample(unchecked_moves, 1)[0]
+        move = random.choice(tuple(unchecked_moves))
         u_new = self.add_child(move)
 
         return u_new
