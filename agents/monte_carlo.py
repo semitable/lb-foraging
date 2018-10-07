@@ -15,6 +15,8 @@ import networkx as nx
 import plotly.graph_objs as go
 from networkx.drawing.nx_pydot import graphviz_layout
 
+MCTS_DEPTH = 15
+
 logger = logging.getLogger(__name__)
 
 def plot_graph(G):
@@ -183,12 +185,10 @@ class MonteCarloAgent(Agent):
         root = self.uct_search(env)
 
         move = root.most_visited_child().move
-        print(move)
-        print(root.most_visited_child().visits)
 
         return move[my_id]
 
-    def uct_search(self, state: Env, timeout=10):
+    def uct_search(self, state: Env, timeout=0.5):
         graph = nx.DiGraph()
 
         root = Node(state)
@@ -213,7 +213,8 @@ class MonteCarloAgent(Agent):
             # back propagation
             self.backup(u_next, delta)
 
-        py.plot(plot_graph(graph))
+        # py.plot(plot_graph(graph))
+        # print(root.visits)
         return root
 
     def backup(self, u: Node, delta: float):
@@ -239,8 +240,10 @@ class MonteCarloAgent(Agent):
         if u.non_terminal():
             new_state = deepcopy(u.state)
 
-            while not new_state.game_over:
+            depth = 0
+            while not new_state.game_over and depth < MCTS_DEPTH:
                 self.random_play(new_state)
+                depth += 1
 
         else:
             new_state = u.state
