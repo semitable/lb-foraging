@@ -14,6 +14,7 @@ from agents import H1, H2, H3, H4
 import networkx as nx
 import plotly.graph_objs as go
 from networkx.drawing.nx_pydot import graphviz_layout
+import pickle
 
 MCTS_DEPTH = 15
 
@@ -131,8 +132,7 @@ class Node:
 
     def add_child(self, move):
 
-        new_state = deepcopy(self.state)
-
+        new_state = pickle.loads(pickle.dumps(self.state, pickle.HIGHEST_PROTOCOL))
         new_is_terminal = False
 
         observations = new_state.step(move)
@@ -238,8 +238,7 @@ class MonteCarloAgent(Agent):
 
     def default_policy(self, u: Node):
         if u.non_terminal():
-            new_state = deepcopy(u.state)
-
+            new_state = pickle.loads(pickle.dumps(u.state, pickle.HIGHEST_PROTOCOL))
             depth = 0
             while not new_state.game_over and depth < MCTS_DEPTH:
                 self.random_play(new_state)
