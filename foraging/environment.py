@@ -75,6 +75,8 @@ class Env:
 
         self._rendering_initialized = False
 
+        self._valid_actions = None
+
     @classmethod
     def from_obs(cls, obs):
 
@@ -89,6 +91,7 @@ class Env:
         env.field = np.copy(obs.field)
         env.current_step = obs.current_step
         env.sight = obs.sight
+        env._gen_valid_moves()
 
         return env
 
@@ -108,6 +111,10 @@ class Env:
     def game_over(self):
         return self._game_over
 
+    def _gen_valid_moves(self):
+        self._valid_actions = {player: [action for action in Action if self._is_valid_action(player, action)] for player
+                               in self.players}
+
     def neighborhood(self, row, col, distance=1):
 
         return self.field[
@@ -116,9 +123,8 @@ class Env:
                ]
 
     def adjacent_food(self, row, col):
-        return (self.field[max(row - 1, 0):min(row + 2, self.rows), col].sum()
-                + self.field[row, max(col - 1, 0):min(col + 2, self.cols)].sum()
-                )
+        return self.field[max(row - 1, 0), col] + self.field[min(row + 1, self.rows - 1), col] + self.field[
+            row, max(col - 1, 0)] + self.field[row, min(col + 1, self.cols - 1)]
 
     def adjacent_food_location(self, row, col):
         if row > 1 and self.field[row - 1, col] > 0:
@@ -197,12 +203,11 @@ class Env:
         return (position[0] - center[0] + min(sight, center[0]), position[1] - center[1] + min(sight, center[1]))
 
     def get_valid_actions(self) -> list:
-        actions = tuple([tuple([action for action in Action if self._is_valid_action(player, action)]) for player in self.players])
-        return list(product(*actions))
+        return list(product(*[self._valid_actions[player] for player in self.players]))
 
     def _make_obs(self, player):
         return self.Observation(
-            actions=[action for action in Action if self._is_valid_action(player, action)],
+            actions=self._valid_actions[player],
             players=[self.PlayerObservation(
                 position=self._transform_to_neighborhood(player.position, self.sight, a.position), level=a.level,
                 is_self=a == player, history=a.history, score=a.score if a == player else None) for a in self.players if
@@ -220,6 +225,7 @@ class Env:
         self.spawn_food(self.max_food, max_level=sum([player.level for player in self.players]))
         self.current_step = 0
         self._game_over = False
+        self._gen_valid_moves()
 
         return [self._make_obs(player) for player in self.players]
 
@@ -228,7 +234,7 @@ class Env:
 
         # check if actions are valid
         for player, action in zip(self.players, actions):
-            if not self._is_valid_action(player, action):
+            if action not in self._valid_actions[player]:
                 self.logger.error('{}{} attempted invalid action {}.'.format(player.name, player.position, action))
                 self.logger.error(self.field)
                 raise ValueError("Invalid action attempted")
@@ -291,6 +297,7 @@ class Env:
             self.field[frow, fcol] = 0
 
         self._game_over = self.field.sum() == 0
+        self._gen_valid_moves()
 
         return [self._make_obs(player) for player in self.players]
 
