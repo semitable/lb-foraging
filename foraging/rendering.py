@@ -6,6 +6,9 @@ _WHITE = (255, 255, 255)
 _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
 
+img_apple = pygame.image.load('foraging/icons/apple.png')
+img_agent = pygame.image.load('foraging/icons/agent.png')
+
 
 class Viewer:
     def __init__(self, world_size):
@@ -13,6 +16,8 @@ class Viewer:
         self.rows, self.cols = world_size
 
         self.grid_size = 50
+        self.icon_size = 20
+
         self.name_font_size = 10
         self.level_font_size = 20
         pygame.init()
@@ -23,7 +28,8 @@ class Viewer:
         self._name_font = pygame.font.SysFont("monospace", self.name_font_size)
         self._level_font = pygame.font.SysFont("monospace", self.level_font_size)
 
-        self._rendering_initialized = True
+        self.img_apple = pygame.transform.scale(img_apple, (self.icon_size, self.icon_size))
+        self.img_agent = pygame.transform.scale(img_agent, (self.icon_size, self.icon_size))
 
     def render(self, env):
 
@@ -46,18 +52,27 @@ class Viewer:
         for r in range(self.rows):
             for c in range(self.cols):
                 if env.field[r, c] != 0:
-                    self._screen.blit(
-                        self._level_font.render(str(env.field[r, c]), 1, _GREEN),
-                        (self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
-                    )
+                    self._draw_population_in_cell(self.img_apple, (self.grid_size * c, self.grid_size * r),
+                                                  env.field[r, c])
+
+    def _draw_population_in_cell(self, img, location, number):
+        coords = [
+            (0, 0),
+            (0, self.icon_size),
+            (self.icon_size, 0),
+            (self.icon_size, self.icon_size),
+        ]
+
+        for i in coords[:number]:
+            self._screen.blit(
+                img,
+                (location[0] + i[0], location[1] + i[1])
+            )
 
     def _draw_players(self, env):
         for player in env.players:
             r, c = player.position
-            self._screen.blit(
-                self._level_font.render(str(player.level), 1, _RED),
-                (self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
-            )
+            self._draw_population_in_cell(self.img_agent, (self.grid_size * c, self.grid_size * r), player.level)
             self._screen.blit(
                 self._name_font.render(str(player.name), 1, _WHITE),
                 (self.grid_size * c + self.grid_size // 3 - 5, self.grid_size * r + self.grid_size // 3 + 20)
