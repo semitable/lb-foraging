@@ -5,13 +5,6 @@ from random import randint
 from itertools import product
 
 import numpy as np
-import pygame
-
-# Define some colors
-_BLACK = (0, 0, 0)
-_WHITE = (255, 255, 255)
-_GREEN = (0, 255, 0)
-_RED = (255, 0, 0)
 
 
 class Action(Enum):
@@ -302,63 +295,11 @@ class Env:
         return [self._make_obs(player) for player in self.players]
 
     def _init_render(self):
+        from .rendering import Viewer
+        self.viewer = Viewer((self.rows, self.cols))
 
-        self.grid_size = 50
-        self.name_font_size = 10
-        self.level_font_size = 20
-        pygame.init()
-        self._screen = pygame.display.set_mode(
-            (self.cols * self.grid_size + 1,
-             self.rows * self.grid_size + 1)
-        )
-        self._name_font = pygame.font.SysFont("monospace", self.name_font_size)
-        self._level_font = pygame.font.SysFont("monospace", self.level_font_size)
-
-        self._rendering_initialized = True
-
-    def _draw_grid(self):
-        for r in range(self.rows + 1):
-            pygame.draw.line(self._screen, _WHITE, (0, self.grid_size * r),
-                             (self.grid_size * self.cols, self.grid_size * r))
-        for c in range(self.cols + 1):
-            pygame.draw.line(self._screen, _WHITE, (self.grid_size * c, 0),
-                             (self.grid_size * c, self.grid_size * self.rows))
-
-    def _draw_food(self):
-        for r in range(self.rows):
-            for c in range(self.cols):
-                if self._is_empty_location(r, c):
-                    pass
-                elif self.field[r, c] != 0:
-                    self._screen.blit(
-                        self._level_font.render(str(self.field[r, c]), 1, _GREEN),
-                        (self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
-                    )
-
-    def _draw_players(self):
-        for player in self.players:
-            r, c = player.position
-            self._screen.blit(
-                self._level_font.render(str(player.level), 1, _RED),
-                (self.grid_size * c + self.grid_size // 3, self.grid_size * r + self.grid_size // 3)
-            )
-            self._screen.blit(
-                self._name_font.render(str(player.name), 1, _WHITE),
-                (self.grid_size * c + self.grid_size // 3 - 5, self.grid_size * r + self.grid_size // 3 + 20)
-            )
-
-    def render(self, text=None):
+    def render(self):
         if not self._rendering_initialized:
             self._init_render()
 
-        self._screen.fill(_BLACK)
-        self._draw_grid()
-        self._draw_food()
-        self._draw_players()
-        if text:
-            self._screen.blit(
-                self._name_font.render(text, 1, _RED),
-                (5, 5)
-            )
-
-        pygame.display.flip()
+        self.viewer.render(self)
