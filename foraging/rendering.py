@@ -56,6 +56,7 @@ class Viewer:
                                                   env.field[r, c])
 
     def _draw_population_in_cell(self, img, location, number):
+        offset = 5
         coords = [
             (0, 0),
             (0, self.icon_size),
@@ -66,7 +67,7 @@ class Viewer:
         for i in coords[:number]:
             self._screen.blit(
                 img,
-                (location[0] + i[0], location[1] + i[1])
+                (location[0] + i[0] + offset, location[1] + i[1] + offset)
             )
 
     def _draw_players(self, env):
