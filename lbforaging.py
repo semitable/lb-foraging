@@ -97,7 +97,7 @@ def main(game_count=1, render=False):
     p0 = Player()
     p0.set_controller(MonteCarloAgent(p0))
 
-    p1 = TypeSpacePlayer([H1], lambda: random.randint(10, 20))
+    p1 = TypeSpacePlayer([H1, H2, H3, H4], lambda: random.randint(10, 20))
 
     evaluate([p0, p1], game_count, render)
 
