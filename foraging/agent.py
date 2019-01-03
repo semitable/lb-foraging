@@ -51,11 +51,15 @@ class Agent:
         return r[min_idx], c[min_idx]
 
     def _make_state(self, obs):
-        state = np.concatenate((
-            obs.field.flatten(),
-            *[(a.position[0], a.position[1], a.level) for a in obs.players]
-        ))
-        return str(tuple(state))
+
+        state = str(obs.field)
+        for c in [']', '[', ' ', '\n']:
+            state = state.replace(c, '')
+
+        for a in obs.players:
+            state = state + str(a.position[0]) + str(a.position[1]) + str(a.level)
+
+        return int(state)
 
     def cleanup(self):
         pass

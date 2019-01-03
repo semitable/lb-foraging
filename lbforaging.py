@@ -5,7 +5,7 @@ import time
 
 from tqdm import tqdm
 
-from agents import H1, H2, H3, H4, MonteCarloAgent
+from agents import H1, H2, H3, H4, MonteCarloAgent, QAgent
 from foraging import Env, Player
 
 _MAX_STEPS = 1000
@@ -93,7 +93,7 @@ def evaluate(players, game_count, render, max_player_level=None, field_size=(8, 
 
 def main(game_count=1, render=False):
     p0 = Player()
-    p0.set_controller(MonteCarloAgent(p0))
+    p0.set_controller(QAgent(p0))
 
     p1 = TypeSpacePlayer([H1, H2, H3, H4], lambda: random.randint(10, 20))
 
