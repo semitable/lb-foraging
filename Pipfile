@@ -10,6 +10,8 @@ pandas = "*"
 tqdm = "*"
 pydot = "*"
 plotly = "<=2.7.*"
+scipy = "*"
+matplotlib = "*"
 
 [dev-packages]
 jupyter = "*"
