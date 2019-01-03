@@ -126,12 +126,15 @@ class QAgent(Agent):
             for i, player in enumerate(env.players):
 
                 if i == player_no:
-                    rl_action = self.Q.choose_action(self._make_state(observations[i]), self.e_2)[player_no]
-                    action = rl_action if rl_action in observations[i].actions else random.choice(
-                        observations[i].actions)
+                    if random.random() > self.e_2:
+                        action = self.Q.choose_action(self._make_state(observations[i]), self.e_2)[player_no]
+                    else:
+                        action = random.choice(observations[i].actions)
                 else:
                     action = player.step(observations[i])
 
+                # make sure the action is valid (if not replace with random action):
+                action = action if action in observations[i].actions else random.choice(observations[i].actions)
                 actions.append(action)
 
             prev_state = self._make_state(observations[player_no])
