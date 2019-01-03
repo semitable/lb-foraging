@@ -1,8 +1,8 @@
 import logging
 from collections import namedtuple, defaultdict
-from enum import IntEnum, Enum
-from random import randint
+from enum import Enum
 from itertools import product
+from random import randint
 
 import numpy as np
 
@@ -22,6 +22,8 @@ class Player:
         self.level = None
         self.field_size = None
         self.score = None
+        self.history = None
+        self.current_step = None
 
     def setup(self, position, level, field_size):
         self.history = []
@@ -193,7 +195,7 @@ class Env:
         raise ValueError("Undefined action")
 
     def _transform_to_neighborhood(self, center, sight, position):
-        return (position[0] - center[0] + min(sight, center[0]), position[1] - center[1] + min(sight, center[1]))
+        return position[0] - center[0] + min(sight, center[0]), position[1] - center[1] + min(sight, center[1])
 
     def get_valid_actions(self) -> list:
         return list(product(*[self._valid_actions[player] for player in self.players]))

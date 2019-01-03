@@ -1,14 +1,12 @@
 import argparse
+import logging
 import random
 import time
-from collections import defaultdict
 
-import numpy as np
 from tqdm import tqdm
 
-from agents import H1, H2, H3, H4, QAgent, MonteCarloAgent
+from agents import H1, H2, H3, H4, MonteCarloAgent
 from foraging import Env, Player
-import logging
 
 _MAX_STEPS = 1000
 

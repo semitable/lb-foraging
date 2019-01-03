@@ -1,24 +1,19 @@
-import os
-from itertools import chain, repeat, product
 import logging
-from copy import copy, deepcopy
 import math
-import time
-import numpy as np
-import plotly.offline as py
-import pandas as pd
+import pickle
 import random
-from foraging import Agent, Env
-from foraging.environment import Action
-from agents import H1, H2, H3, H4
+import time
+
 import networkx as nx
 import plotly.graph_objs as go
 from networkx.drawing.nx_pydot import graphviz_layout
-import pickle
+
+from foraging import Agent, Env
 
 MCTS_DEPTH = 15
 
 logger = logging.getLogger(__name__)
+
 
 def plot_graph(G):
     pos = graphviz_layout(G, prog='dot')
@@ -79,7 +74,8 @@ def plot_graph(G):
         node_trace['x'].append(x)
         node_trace['y'].append(y)
 
-        node_info = "Visits: +{0}<br>Rewards: {1}<br>Score: {2}".format(node.visits, node.reward, node.state.players[0].score)
+        node_info = "Visits: +{0}<br>Rewards: {1}<br>Score: {2}".format(node.visits, node.reward,
+                                                                        node.state.players[0].score)
 
         node_trace['text'].append(node_info)
 
@@ -100,7 +96,6 @@ def plot_graph(G):
 
 class Node:
     def __init__(self, state: Env):
-
         self.root = None
 
         self.move = None
@@ -131,7 +126,6 @@ class Node:
         return u_new
 
     def add_child(self, move):
-
         new_state = pickle.loads(pickle.dumps(self.state, pickle.HIGHEST_PROTOCOL))
         new_is_terminal = False
 
@@ -154,7 +148,6 @@ class Node:
         return u_new
 
     def best_child(self, c=2, h=10):
-
         my_id = 0  # todo fix this
 
         ucb1 = lambda u: (u.reward / u.visits

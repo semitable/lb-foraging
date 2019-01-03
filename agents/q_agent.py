@@ -1,12 +1,12 @@
-import os
-from itertools import chain, repeat, product
+import random
+from itertools import repeat, product
 
 import numpy as np
 import pandas as pd
-import random
+
+from agents import H1
 from foraging import Agent, Env
 from foraging.environment import Action
-from agents import H1, H2, H3, H4
 
 _CACHE = None
 
@@ -159,7 +159,7 @@ class QAgent(Agent):
 
     def step(self, obs):
 
-        if self.Q == None:
+        if self.Q is None:
             self.Q = QLearningTable(actions=list(product(*repeat(Action, len(obs.players)))))
 
         # observe current state s

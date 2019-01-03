@@ -1,6 +1,6 @@
-from foraging import Agent, Env
 import random
-import tensorflow as tf
+
+from foraging import Agent
 
 
 class NNAgent(Agent):
