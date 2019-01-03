@@ -9,57 +9,56 @@ _MAX_INT = 999999
 
 
 class Agent:
-	name = "Prototype Agent"
+    name = "Prototype Agent"
 
-	def __repr__(self):
-		return self.name
+    def __repr__(self):
+        return self.name
 
-	def __init__(self, player):
-		self.logger = logging.getLogger(__name__)
-		self.player = player
+    def __init__(self, player):
+        self.logger = logging.getLogger(__name__)
+        self.player = player
 
-	def __getattr__(self, item):
-		return getattr(self.player, item)
+    def __getattr__(self, item):
+        return getattr(self.player, item)
 
-	def _step(self, obs):
-		self.observed_position = next((x for x in obs.players if x.is_self), None).position
+    def _step(self, obs):
+        self.observed_position = next((x for x in obs.players if x.is_self), None).position
 
-		# saves the action to the history
-		action = self.step(obs)
-		self.history.append(action)
+        # saves the action to the history
+        action = self.step(obs)
+        self.history.append(action)
 
-		return action
+        return action
 
-	def step(self, obs):
-		raise NotImplemented("You must implement an agent")
+    def step(self, obs):
+        raise NotImplemented("You must implement an agent")
 
-	def _closest_food(self, obs, max_food_level=None, start=None):
+    def _closest_food(self, obs, max_food_level=None, start=None):
 
-		if start is None:
-			x, y = self.observed_position
-		else:
-			x, y = start
+        if start is None:
+            x, y = self.observed_position
+        else:
+            x, y = start
 
-		field = np.copy(obs.field)
+        field = np.copy(obs.field)
 
-		if max_food_level:
-			field[field > max_food_level] = 0
+        if max_food_level:
+            field[field > max_food_level] = 0
 
-		r, c = np.nonzero(field)
-		try:
-			min_idx = ((r - x) ** 2 + (c - y) ** 2).argmin()
-		except ValueError:
-			return None
+        r, c = np.nonzero(field)
+        try:
+            min_idx = ((r - x) ** 2 + (c - y) ** 2).argmin()
+        except ValueError:
+            return None
 
-		return r[min_idx], c[min_idx]
+        return r[min_idx], c[min_idx]
 
-	def _make_state(self, obs):
-		state = np.concatenate((
-			obs.field.flatten(),
-			*[(a.position[0], a.position[1], a.level) for a in obs.players]
-		))
-		return str(tuple(state))
+    def _make_state(self, obs):
+        state = np.concatenate((
+            obs.field.flatten(),
+            *[(a.position[0], a.position[1], a.level) for a in obs.players]
+        ))
+        return str(tuple(state))
 
-
-	def cleanup(self):
-		pass
+    def cleanup(self):
+        pass
