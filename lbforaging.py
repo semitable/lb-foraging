@@ -5,7 +5,7 @@ import time
 
 from tqdm import tqdm
 
-from agents import H1, H2, H3, H4, MonteCarloAgent, QAgent
+from agents import *
 from foraging import Env, Player
 
 _MAX_STEPS = 1000
@@ -26,7 +26,9 @@ class TypeSpacePlayer(Player):
 
     def step(self, obs):
         if self.next_change <= 0:
-            self.set_controller(random.choice(self.type_space)(self))
+            choice = random.choice(self.type_space)
+            print("Switching to: ", choice)
+            self.set_controller(choice(self))
             self.next_change = self.change_every()
 
         self.next_change -= 1
@@ -93,7 +95,7 @@ def evaluate(players, game_count, render, max_player_level=None, field_size=(8, 
 
 def main(game_count=1, render=False):
     p0 = Player()
-    p0.set_controller(QAgent(p0))
+    p0.set_controller(HBAAgent(p0))
 
     p1 = TypeSpacePlayer([H1, H2, H3, H4], lambda: random.randint(10, 20))
 
