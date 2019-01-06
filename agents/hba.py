@@ -3,6 +3,10 @@ from foraging import Env
 import random
 import numpy as np
 from agents import H1, H2, H3, H4
+from itertools import product
+from collections import defaultdict
+from functools import reduce
+import operator
 
 
 class HBAAgent(QAgent):
@@ -25,6 +29,33 @@ class HBAAgent(QAgent):
             return max(0, a - b * (x - 1) ** c)
 
         return f
+
+    def choose_action(self, state, obs):
+        player_no = next((i for i, item in enumerate(obs.players) if item.is_self))
+        self.Q.check_state_exist(state)
+
+        env = Env.from_obs(obs)
+        moves = self.generate_typespace_moves(env)
+
+        actions = []
+        beliefs = []
+        for i, p in enumerate(obs.players):
+            if p.is_self:
+                actions.append(obs.actions)
+                beliefs.append(np.ones(len(self.type_space)))
+            else:
+                actions.append(moves[i, :])
+                beliefs.append(self.belief[i, :])
+        joint_actions = list(product(*actions))
+        probs = list(product(*beliefs))
+
+        exppay = defaultdict(int)
+
+        for action, prob in zip(joint_actions, probs):
+            v = self.Q.q_table.at[state, action] * reduce(operator.mul, prob)
+            exppay[action[player_no]] += v
+
+        return max(exppay.items(), key=operator.itemgetter(1))[0]
 
     def step(self, obs):
         if obs.current_step > 0:
@@ -51,7 +82,7 @@ class HBAAgent(QAgent):
 
         env = Env.from_obs(self.prev_obs)
         moves = self.generate_typespace_moves(env, player_no)
-        truth = np.array([[p.history[-1] for p in obs.players], ]*len(self.type_space)).T
+        truth = np.array([[p.history[-1] for p in obs.players], ] * len(self.type_space)).T
 
         likelihood = np.equal(truth, moves).astype(float)
         likelihood[likelihood == 0] = 0.01
@@ -71,7 +102,6 @@ class HBAAgent(QAgent):
 
             self.belief[i, :] = self.belief[i, :] * L
             self.belief[i, :] = self.belief[i, :] / sum(self.belief[i, :])
-
 
     def expand(self, obs, depth):
         player_no = next((i for i, item in enumerate(obs.players) if item.is_self))
@@ -94,7 +124,7 @@ class HBAAgent(QAgent):
 
                 if i == player_no:
                     if random.random() > self.e_2:
-                        action = self.Q.choose_action(self._make_state(observations[i]), self.e_2)[player_no]
+                        action = self.Q.choose_action(self._make_state(observations[i]))[player_no]
                     else:
                         action = random.choice(observations[i].actions)
                 else:

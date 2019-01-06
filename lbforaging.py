@@ -27,7 +27,6 @@ class TypeSpacePlayer(Player):
     def step(self, obs):
         if self.next_change <= 0:
             choice = random.choice(self.type_space)
-            print("Switching to: ", choice)
             self.set_controller(choice(self))
             self.next_change = self.change_every()
 

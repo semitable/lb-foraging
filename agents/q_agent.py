@@ -28,25 +28,17 @@ class QLearningTable:
         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
         self.e_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
 
-    def choose_action(self, observation, e):
+    def choose_action(self, observation):
         self.check_state_exist(observation)
 
-        if np.random.uniform() <= 1 - e:
-            # choose best action
-            state_action = self.q_table.loc[observation, :]
+        # choose best action
+        state_action = self.q_table.loc[observation, :]
 
-            # some actions have the same value
-            # state_action = state_action.reindex(np.random.permutation(state_action.index))
-            max_reward = state_action.max()
+        # some actions have the same value
+        # state_action = state_action.reindex(np.random.permutation(state_action.index))
+        max_reward = state_action.max()
 
-            action = random.choice(state_action[state_action == max_reward].index)
-        # if e==0:
-        # 	print("CHOOSING BEST ACTION {} for STATE {} with R: {}".format(action, observation, max(state_action)))
-        else:
-
-            # choose random action
-            action = self.actions[np.random.randint(len(self.actions))]
-        # print("RANDOM ACTION", action)
+        action = random.choice(state_action[state_action == max_reward].index)
 
         return action
 
@@ -127,7 +119,7 @@ class QAgent(Agent):
 
                 if i == player_no:
                     if random.random() > self.e_2:
-                        action = self.Q.choose_action(self._make_state(observations[i]), self.e_2)[player_no]
+                        action = self.Q.choose_action(self._make_state(observations[i]))[player_no]
                     else:
                         action = random.choice(observations[i].actions)
                 else:
@@ -157,6 +149,9 @@ class QAgent(Agent):
             if env.game_over:
                 break
 
+    def choose_action(self, state, obs):
+        return self.Q.choose_action(state)[0]
+
     def step(self, obs):
 
         if self.Q is None:
@@ -178,7 +173,10 @@ class QAgent(Agent):
             self.Q.e_table = eligibility.copy()
             self.expand(obs, depth=20)
 
-        rl_action = self.Q.choose_action(state, self.e_1)[0]
+        if self.e_1 < np.random.uniform():
+            rl_action = self.choose_action(state, obs)
+        else:
+            rl_action = random.choice(obs.actions)
 
         action = rl_action if rl_action in obs.actions else random.choice(obs.actions)
 
