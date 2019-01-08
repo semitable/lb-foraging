@@ -28,6 +28,10 @@ class QLearningTable:
         self.q_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
         self.e_table = pd.DataFrame(columns=self.actions, dtype=np.float64)
 
+    def clear_table(self):
+        self.q_table = self.q_table.iloc[0:0]
+        self.e_table = self.e_table.iloc[0:0]
+
     def choose_action(self, observation):
         self.check_state_exist(observation)
 
@@ -166,6 +170,7 @@ class QAgent(Agent):
             self.Q.learn(self._prev_state, joint_action, reward, state)
 
         if obs.game_over:
+            self.Q.clear_table()
             return None
 
         eligibility = self.Q.e_table.copy()
