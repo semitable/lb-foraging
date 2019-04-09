@@ -5,8 +5,8 @@ import time
 
 from tqdm import tqdm
 
-from agents import *
-from foraging import Env, Player
+from lbforaging.agents import *
+from lbforaging.foraging import Env, Player
 
 _MAX_STEPS = 1000
 
