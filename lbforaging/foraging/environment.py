@@ -54,6 +54,8 @@ class ForagingEnv(Env):
     A class that contains rules/actions for the game level-based foraging.
     """
 
+    metadata = {"render.modes": ["human"]}
+
     action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
     Observation = namedtuple(
         "Observation",
@@ -74,7 +76,7 @@ class ForagingEnv(Env):
         self.sight = sight
         self._game_over = None
 
-        self.action_space = gym.spaces.Discrete(len(self.action_set))
+        self.action_space = gym.spaces.Discrete(6)
         self.observation_space = self._get_observation_space()
 
         self._rendering_initialized = False
@@ -331,7 +333,10 @@ class ForagingEnv(Env):
         for p in self.players:
             p.reward = 0
 
-        actions = [Action(a) if Action(a) in self._valid_actions[p] else Action.NONE for p, a in zip(self.players, actions)]
+        actions = [
+            Action(a) if Action(a) in self._valid_actions[p] else Action.NONE
+            for p, a in zip(self.players, actions)
+        ]
 
         # check if actions are valid
         for i, (player, action) in enumerate(zip(self.players, actions)):
@@ -343,7 +348,6 @@ class ForagingEnv(Env):
                 )
                 actions[i] = Action.NONE
 
-
         loading_players = set()
 
         # move players
@@ -353,7 +357,7 @@ class ForagingEnv(Env):
         # so check for collisions
         for player, action in zip(self.players, actions):
             if action == Action.NONE:
-            	collisions[player.position].append(player)
+                collisions[player.position].append(player)
             elif action == Action.NORTH:
                 collisions[(player.position[0] - 1, player.position[1])].append(player)
             elif action == Action.SOUTH:
@@ -413,7 +417,7 @@ class ForagingEnv(Env):
 
         self.viewer = Viewer((self.rows, self.cols))
 
-    def render(self):
+    def render(self, mode='human'):
         if not self._rendering_initialized:
             self._init_render()
 

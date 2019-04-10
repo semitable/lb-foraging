@@ -10,4 +10,5 @@ register(
         "max_food": 4,
         "sight": 8,
     },
+    max_episode_steps=250,
 )

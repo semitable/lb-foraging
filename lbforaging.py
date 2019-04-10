@@ -9,7 +9,6 @@ import lbforaging.foraging
 
 logger = logging.getLogger(__name__)
 
-EPISODES = 500
 
 def _game_loop(env, render):
     """
@@ -19,30 +18,31 @@ def _game_loop(env, render):
 
     if render:
         env.render()
-        time.sleep(1)
+        time.sleep(0.5)
 
     while not done:
 
         actions = []
         for i, player in enumerate(env.players):
             actions.append(env.action_space.sample())
-        print(actions)
         nobs, nreward, ndone, _ = env.step(actions)
-        print(actions)
+        if sum(nreward) > 0:
+            print(nreward)
 
         if render:
             env.render()
-            time.sleep(1)
+            time.sleep(0.5)
 
         done = np.all(ndone)
+    # print(env.players[0].score, env.players[1].score)
 
 
 def main(game_count=1, render=False):
     env = gym.make("Foraging-v0")
     obs = env.reset()
 
-    for episode in range(EPISODES):
-        _game_loop(env, True)
+    for episode in range(game_count):
+        _game_loop(env, render)
 
 
 if __name__ == "__main__":
