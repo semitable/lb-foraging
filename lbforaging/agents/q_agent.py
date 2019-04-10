@@ -12,7 +12,7 @@ _CACHE = None
 
 
 class QLearningTable:
-    _DATA_FILE = 'qtable.gz'
+    _DATA_FILE = "qtable.gz"
 
     def __init__(self, actions):
         self.actions = actions  # a list
@@ -84,9 +84,15 @@ class QLearningTable:
         if state not in self.q_table.index:
             # append new state to q table
             self.q_table = self.q_table.append(
-                pd.Series([0] * len(self.actions), index=self.q_table.columns, name=state))
+                pd.Series(
+                    [0] * len(self.actions), index=self.q_table.columns, name=state
+                )
+            )
             self.e_table = self.e_table.append(
-                pd.Series([0] * len(self.actions), index=self.q_table.columns, name=state))
+                pd.Series(
+                    [0] * len(self.actions), index=self.q_table.columns, name=state
+                )
+            )
 
 
 class QAgent(Agent):
@@ -123,14 +129,20 @@ class QAgent(Agent):
 
                 if i == player_no:
                     if random.random() > self.e_2:
-                        action = self.Q.choose_action(self._make_state(observations[i]))[player_no]
+                        action = self.Q.choose_action(
+                            self._make_state(observations[i])
+                        )[player_no]
                     else:
                         action = random.choice(observations[i].actions)
                 else:
                     action = player.step(observations[i])
 
                 # make sure the action is valid (if not replace with random action):
-                action = action if action in observations[i].actions else random.choice(observations[i].actions)
+                action = (
+                    action
+                    if action in observations[i].actions
+                    else random.choice(observations[i].actions)
+                )
                 actions.append(action)
 
             prev_state = self._make_state(observations[player_no])
@@ -159,7 +171,9 @@ class QAgent(Agent):
     def step(self, obs):
 
         if self.Q is None:
-            self.Q = QLearningTable(actions=list(product(*repeat(Action, len(obs.players)))))
+            self.Q = QLearningTable(
+                actions=list(product(*repeat(Action, len(obs.players))))
+            )
 
         # observe current state s
         state = self._make_state(obs)

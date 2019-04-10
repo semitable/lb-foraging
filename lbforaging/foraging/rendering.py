@@ -6,8 +6,8 @@ _WHITE = (255, 255, 255)
 _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
 
-img_apple = pygame.image.load('foraging/icons/apple.png')
-img_agent = pygame.image.load('foraging/icons/agent.png')
+img_apple = pygame.image.load("foraging/icons/apple.png")
+img_agent = pygame.image.load("foraging/icons/agent.png")
 
 
 class Viewer:
@@ -22,14 +22,17 @@ class Viewer:
         self.level_font_size = 20
         pygame.init()
         self._screen = pygame.display.set_mode(
-            (self.cols * self.grid_size + 1,
-             self.rows * self.grid_size + 1)
+            (self.cols * self.grid_size + 1, self.rows * self.grid_size + 1)
         )
         self._name_font = pygame.font.SysFont("monospace", self.name_font_size)
         self._level_font = pygame.font.SysFont("monospace", self.level_font_size)
 
-        self.img_apple = pygame.transform.scale(img_apple, (self.icon_size, self.icon_size))
-        self.img_agent = pygame.transform.scale(img_agent, (self.icon_size, self.icon_size))
+        self.img_apple = pygame.transform.scale(
+            img_apple, (self.icon_size, self.icon_size)
+        )
+        self.img_agent = pygame.transform.scale(
+            img_agent, (self.icon_size, self.icon_size)
+        )
 
     def render(self, env):
 
@@ -42,18 +45,29 @@ class Viewer:
 
     def _draw_grid(self):
         for r in range(self.rows + 1):
-            pygame.draw.line(self._screen, _WHITE, (0, self.grid_size * r),
-                             (self.grid_size * self.cols, self.grid_size * r))
+            pygame.draw.line(
+                self._screen,
+                _WHITE,
+                (0, self.grid_size * r),
+                (self.grid_size * self.cols, self.grid_size * r),
+            )
         for c in range(self.cols + 1):
-            pygame.draw.line(self._screen, _WHITE, (self.grid_size * c, 0),
-                             (self.grid_size * c, self.grid_size * self.rows))
+            pygame.draw.line(
+                self._screen,
+                _WHITE,
+                (self.grid_size * c, 0),
+                (self.grid_size * c, self.grid_size * self.rows),
+            )
 
     def _draw_food(self, env):
         for r in range(self.rows):
             for c in range(self.cols):
                 if env.field[r, c] != 0:
-                    self._draw_population_in_cell(self.img_apple, (self.grid_size * c, self.grid_size * r),
-                                                  env.field[r, c])
+                    self._draw_population_in_cell(
+                        self.img_apple,
+                        (self.grid_size * c, self.grid_size * r),
+                        env.field[r, c],
+                    )
 
     def _draw_population_in_cell(self, img, location, number):
         offset = 5
@@ -66,15 +80,19 @@ class Viewer:
 
         for i in coords[:number]:
             self._screen.blit(
-                img,
-                (location[0] + i[0] + offset, location[1] + i[1] + offset)
+                img, (location[0] + i[0] + offset, location[1] + i[1] + offset)
             )
 
     def _draw_players(self, env):
         for player in env.players:
             r, c = player.position
-            self._draw_population_in_cell(self.img_agent, (self.grid_size * c, self.grid_size * r), player.level)
+            self._draw_population_in_cell(
+                self.img_agent, (self.grid_size * c, self.grid_size * r), player.level
+            )
             self._screen.blit(
                 self._name_font.render(str(player.name), 1, _WHITE),
-                (self.grid_size * c + self.grid_size // 3 - 5, self.grid_size * r + self.grid_size // 3 + 20)
+                (
+                    self.grid_size * c + self.grid_size // 3 - 5,
+                    self.grid_size * r + self.grid_size // 3 + 20,
+                ),
             )

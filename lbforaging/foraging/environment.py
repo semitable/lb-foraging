@@ -3,7 +3,8 @@ from collections import namedtuple, defaultdict
 from enum import Enum
 from itertools import product
 from random import randint
-
+from gym import Env
+import gym
 import numpy as np
 
 
@@ -46,31 +47,55 @@ class Player:
             return "Player"
 
 
-class ForagingEnv:
+class ForagingEnv(Env):
     """
     A class that contains rules/actions for the game level-based foraging.
     """
 
     action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
-    Observation = namedtuple("Observation", ['field', 'actions', 'players', 'game_over', 'sight', 'current_step'])
-    PlayerObservation = namedtuple("PlayerObservation", ['position', 'level', 'history', 'score',
-                                                         'is_self'])  # score is available only if is_self
+    Observation = namedtuple(
+        "Observation",
+        ["field", "actions", "players", "game_over", "sight", "current_step"],
+    )
+    PlayerObservation = namedtuple(
+        "PlayerObservation", ["position", "level", "history", "score", "is_self"]
+    )  # score is available only if is_self
 
     def __init__(self, players, max_player_level, field_size, max_food, sight):
         self.logger = logging.getLogger(__name__)
-        self.players = players
+        self.players = [Player() for _ in range(players)]
 
-        if field_size:
-            self.field = np.zeros(field_size, np.int32)
+        self.field = np.zeros(field_size, np.int32)
 
         self.max_food = max_food
         self.max_player_level = max_player_level
         self.sight = sight
         self._game_over = None
 
-        self._rendering_initialized = False
+        self.action_space = gym.spaces.Discrete(len(self.action_set))
+        self.observation_space = self._get_observation_space()
 
+        self._rendering_initialized = False
         self._valid_actions = None
+
+    def _get_observation_space(self):
+        """The Observation Space for each agent.
+        - all of the board (board_size^2) with foods
+        - player description (x, y, level)*player_count
+        """
+        field_x = self.field.shape[1]
+        field_y = self.field.shape[0]
+        field_size = field_x * field_y
+        max_food_level = self.max_player_level * len(self.players)
+
+        min_obs = [0] * field_size + [0, 0, 1] * len(self.players)
+        max_obs = [max_food_level] * field_size + [
+            field_x,
+            field_y,
+            self.max_player_level,
+        ] * len(self.players)
+
+        return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.int32)
 
     @classmethod
     def from_obs(cls, obs):
@@ -107,19 +132,27 @@ class ForagingEnv:
         return self._game_over
 
     def _gen_valid_moves(self):
-        self._valid_actions = {player: [action for action in Action if self._is_valid_action(player, action)] for player
-                               in self.players}
+        self._valid_actions = {
+            player: [
+                action for action in Action if self._is_valid_action(player, action)
+            ]
+            for player in self.players
+        }
 
     def neighborhood(self, row, col, distance=1):
 
         return self.field[
-               max(row - distance, 0):min(row + distance + 1, self.rows),
-               max(col - distance, 0):min(col + distance + 1, self.cols)
-               ]
+            max(row - distance, 0) : min(row + distance + 1, self.rows),
+            max(col - distance, 0) : min(col + distance + 1, self.cols),
+        ]
 
     def adjacent_food(self, row, col):
-        return self.field[max(row - 1, 0), col] + self.field[min(row + 1, self.rows - 1), col] + self.field[
-            row, max(col - 1, 0)] + self.field[row, min(col + 1, self.cols - 1)]
+        return (
+            self.field[max(row - 1, 0), col]
+            + self.field[min(row + 1, self.rows - 1), col]
+            + self.field[row, max(col - 1, 0)]
+            + self.field[row, min(col + 1, self.cols - 1)]
+        )
 
     def adjacent_food_location(self, row, col):
         if row > 1 and self.field[row - 1, col] > 0:
@@ -132,10 +165,14 @@ class ForagingEnv:
             return row, col + 1
 
     def adjacent_players(self, row, col):
-        return [player for player in self.players if
-                abs(player.position[0] - row) == 1 and player.position[1] == col or
-                abs(player.position[1] - col) == 1 and player.position[0] == row
-                ]
+        return [
+            player
+            for player in self.players
+            if abs(player.position[0] - row) == 1
+            and player.position[1] == col
+            or abs(player.position[1] - col) == 1
+            and player.position[0] == row
+        ]
 
     def spawn_food(self, max_food, max_level):
 
@@ -148,7 +185,9 @@ class ForagingEnv:
             col = randint(1, self.cols - 2)
 
             # check if it has neighbors:
-            if self.neighborhood(row, col, distance=2).sum() > 0 or not self._is_empty_location(row, col):
+            if self.neighborhood(
+                row, col, distance=2
+            ).sum() > 0 or not self._is_empty_location(row, col):
                 continue
 
             self.field[row, col] = randint(1, max_level)
@@ -174,20 +213,34 @@ class ForagingEnv:
                 row = randint(0, self.rows - 1)
                 col = randint(0, self.cols - 1)
                 if self._is_empty_location(row, col):
-                    player.setup((row, col), randint(1, max_player_level), self.field_size)
+                    player.setup(
+                        (row, col), randint(1, max_player_level), self.field_size
+                    )
                     break
                 attempts += 1
 
     def _is_valid_action(self, player, action):
 
         if action == Action.NORTH:
-            return player.position[0] > 0 and self.field[player.position[0] - 1, player.position[1]] == 0
+            return (
+                player.position[0] > 0
+                and self.field[player.position[0] - 1, player.position[1]] == 0
+            )
         elif action == Action.SOUTH:
-            return player.position[0] < self.rows - 1 and self.field[player.position[0] + 1, player.position[1]] == 0
+            return (
+                player.position[0] < self.rows - 1
+                and self.field[player.position[0] + 1, player.position[1]] == 0
+            )
         elif action == Action.WEST:
-            return player.position[1] > 0 and self.field[player.position[0], player.position[1] - 1] == 0
+            return (
+                player.position[1] > 0
+                and self.field[player.position[0], player.position[1] - 1] == 0
+            )
         elif action == Action.EAST:
-            return player.position[1] < self.cols - 1 and self.field[player.position[0], player.position[1] + 1] == 0
+            return (
+                player.position[1] < self.cols - 1
+                and self.field[player.position[0], player.position[1] + 1] == 0
+            )
         elif action == Action.LOAD:
             return self.adjacent_food(*player.position) > 0
 
@@ -195,7 +248,10 @@ class ForagingEnv:
         raise ValueError("Undefined action")
 
     def _transform_to_neighborhood(self, center, sight, position):
-        return position[0] - center[0] + min(sight, center[0]), position[1] - center[1] + min(sight, center[1])
+        return (
+            position[0] - center[0] + min(sight, center[0]),
+            position[1] - center[1] + min(sight, center[1]),
+        )
 
     def get_valid_actions(self) -> list:
         return list(product(*[self._valid_actions[player] for player in self.players]))
@@ -203,10 +259,24 @@ class ForagingEnv:
     def _make_obs(self, player):
         return self.Observation(
             actions=self._valid_actions[player],
-            players=[self.PlayerObservation(
-                position=self._transform_to_neighborhood(player.position, self.sight, a.position), level=a.level,
-                is_self=a == player, history=a.history, score=a.score if a == player else None) for a in self.players if
-                min(self._transform_to_neighborhood(player.position, self.sight, a.position)) >= 0],
+            players=[
+                self.PlayerObservation(
+                    position=self._transform_to_neighborhood(
+                        player.position, self.sight, a.position
+                    ),
+                    level=a.level,
+                    is_self=a == player,
+                    history=a.history,
+                    score=a.score if a == player else None,
+                )
+                for a in self.players
+                if min(
+                    self._transform_to_neighborhood(
+                        player.position, self.sight, a.position
+                    )
+                )
+                >= 0
+            ],
             # todo also check max?
             field=np.copy(self.neighborhood(*player.position, self.sight)),
             game_over=self.game_over,
@@ -214,15 +284,37 @@ class ForagingEnv:
             current_step=self.current_step,
         )
 
+    def _make_gym_obs(self, observations):
+        def make_obs_array(observation):
+            obs = np.zeros(self.observation_space.shape)
+            obs[: observation.field.size] = observation.field.flatten()
+            for i, p in enumerate(observation.players):
+                obs[observation.field.size + 3 * i] = p.position[0]
+                obs[observation.field.size + 3 * i + 1] = p.position[1]
+                obs[observation.field.size + 3 * i + 2] = p.level
+
+            return obs
+
+        nobs = [make_obs_array(obs) for obs in observations]
+        nreward = [0 for obs in observations]
+        ndone = [obs.game_over for obs in observations]
+        # ninfo = [{'observation': obs} for obs in observations]
+        ninfo = [{} for obs in observations]
+
+        return nobs, nreward, ndone, ninfo
+
     def reset(self):
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.max_player_level)
-        self.spawn_food(self.max_food, max_level=sum([player.level for player in self.players]))
+        self.spawn_food(
+            self.max_food, max_level=sum([player.level for player in self.players])
+        )
         self.current_step = 0
         self._game_over = False
         self._gen_valid_moves()
 
-        return [self._make_obs(player) for player in self.players]
+        observations = [self._make_obs(player) for player in self.players]
+        return self._make_gym_obs(observations)
 
     def step(self, actions):
         self.current_step += 1
@@ -230,7 +322,11 @@ class ForagingEnv:
         # check if actions are valid
         for player, action in zip(self.players, actions):
             if action not in self._valid_actions[player]:
-                self.logger.error('{}{} attempted invalid action {}.'.format(player.name, player.position, action))
+                self.logger.error(
+                    "{}{} attempted invalid action {}.".format(
+                        player.name, player.position, action
+                    )
+                )
                 self.logger.error(self.field)
                 raise ValueError("Invalid action attempted")
 
@@ -275,7 +371,9 @@ class ForagingEnv:
             food = self.field[frow, fcol]
 
             adj_players = self.adjacent_players(frow, fcol)
-            adj_players = [p for p in adj_players if p in loading_players or p is player]
+            adj_players = [
+                p for p in adj_players if p in loading_players or p is player
+            ]
 
             adj_player_level = sum([a.level for a in adj_players])
 
@@ -294,10 +392,12 @@ class ForagingEnv:
         self._game_over = self.field.sum() == 0
         self._gen_valid_moves()
 
-        return [self._make_obs(player) for player in self.players]
+        observations = [self._make_obs(player) for player in self.players]
+        return self._make_gym_obs(observations)
 
     def _init_render(self):
         from .rendering import Viewer
+
         self.viewer = Viewer((self.rows, self.cols))
 
     def render(self):

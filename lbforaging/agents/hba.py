@@ -10,7 +10,7 @@ import operator
 
 
 class HBAAgent(QAgent):
-    name = 'HBA'
+    name = "HBA"
 
     def __init__(self, *kargs, **kwargs):
         super().__init__(*kargs, **kwargs)
@@ -82,7 +82,9 @@ class HBAAgent(QAgent):
 
         env = Env.from_obs(self.prev_obs)
         moves = self.generate_typespace_moves(env, player_no)
-        truth = np.array([[p.history[-1] for p in obs.players], ] * len(self.type_space)).T
+        truth = np.array(
+            [[p.history[-1] for p in obs.players]] * len(self.type_space)
+        ).T
 
         likelihood = np.equal(truth, moves).astype(float)
         likelihood[likelihood == 0] = 0.01
@@ -124,14 +126,20 @@ class HBAAgent(QAgent):
 
                 if i == player_no:
                     if random.random() > self.e_2:
-                        action = self.Q.choose_action(self._make_state(observations[i]))[player_no]
+                        action = self.Q.choose_action(
+                            self._make_state(observations[i])
+                        )[player_no]
                     else:
                         action = random.choice(observations[i].actions)
                 else:
                     action = player.step(observations[i])
 
                 # make sure the action is valid (if not replace with random action):
-                action = action if action in observations[i].actions else random.choice(observations[i].actions)
+                action = (
+                    action
+                    if action in observations[i].actions
+                    else random.choice(observations[i].actions)
+                )
                 actions.append(action)
 
             prev_state = self._make_state(observations[player_no])

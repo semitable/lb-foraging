@@ -19,7 +19,9 @@ class Agent:
         return getattr(self.player, item)
 
     def _step(self, obs):
-        self.observed_position = next((x for x in obs.players if x.is_self), None).position
+        self.observed_position = next(
+            (x for x in obs.players if x.is_self), None
+        ).position
 
         # saves the action to the history
         action = self.step(obs)
@@ -53,8 +55,8 @@ class Agent:
     def _make_state(self, obs):
 
         state = str(obs.field)
-        for c in [']', '[', ' ', '\n']:
-            state = state.replace(c, '')
+        for c in ["]", "[", " ", "\n"]:
+            state = state.replace(c, "")
 
         for a in obs.players:
             state = state + str(a.position[0]) + str(a.position[1]) + str(a.level)

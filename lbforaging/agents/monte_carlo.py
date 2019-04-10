@@ -16,33 +16,34 @@ logger = logging.getLogger(__name__)
 
 
 def plot_graph(G):
-    pos = graphviz_layout(G, prog='dot')
+    pos = graphviz_layout(G, prog="dot")
 
     edge_trace = go.Scatter(
         x=[],
         y=[],
-        line=go.Line(width=0.5, color='#888'),
-        hoverinfo='none',
-        mode='lines')
+        line=go.Line(width=0.5, color="#888"),
+        hoverinfo="none",
+        mode="lines",
+    )
 
     my_annotations = []
 
     for edge in G.edges():
         x0, y0 = pos[edge[0]]
         x1, y1 = pos[edge[1]]
-        edge_trace['x'] += (x0, x1, None)
-        edge_trace['y'] += (y0, y1, None)
+        edge_trace["x"] += (x0, x1, None)
+        edge_trace["y"] += (y0, y1, None)
         my_annotations.append(
             dict(
                 x=(x0 + x1) / 2,
                 y=(y0 + y1) / 2,
-                xref='x',
-                yref='y',
-                text='{}'.format(G.get_edge_data(edge[0], edge[1])['action']),
+                xref="x",
+                yref="y",
+                text="{}".format(G.get_edge_data(edge[0], edge[1])["action"]),
                 showarrow=False,
                 arrowhead=2,
                 ax=0,
-                ay=0
+                ay=0,
             )
         )
 
@@ -50,47 +51,53 @@ def plot_graph(G):
         x=[],
         y=[],
         text=[],
-        mode='markers',
-        hoverinfo='text',
+        mode="markers",
+        hoverinfo="text",
         marker=go.Marker(
             showscale=False,
             # colorscale options
             # 'Greys' | 'Greens' | 'Bluered' | 'Hot' | 'Picnic' | 'Portland' |
             # Jet' | 'RdBu' | 'Blackbody' | 'Earth' | 'Electric' | 'YIOrRd' | 'YIGnBu'
-            colorscale='YIGnBu',
+            colorscale="YIGnBu",
             reversescale=True,
             color=[],
             size=10,
             colorbar=dict(
                 thickness=15,
-                title='Node Connections',
-                xanchor='left',
-                titleside='right'
+                title="Node Connections",
+                xanchor="left",
+                titleside="right",
             ),
-            line=dict(width=2)))
+            line=dict(width=2),
+        ),
+    )
 
     for node in G.nodes():
         x, y = pos[node]
-        node_trace['x'].append(x)
-        node_trace['y'].append(y)
+        node_trace["x"].append(x)
+        node_trace["y"].append(y)
 
-        node_info = "Visits: +{0}<br>Rewards: {1}<br>Score: {2}".format(node.visits, node.reward,
-                                                                        node.state.players[0].score)
+        node_info = "Visits: +{0}<br>Rewards: {1}<br>Score: {2}".format(
+            node.visits, node.reward, node.state.players[0].score
+        )
 
-        node_trace['text'].append(node_info)
+        node_trace["text"].append(node_info)
 
-    fig = go.Figure(data=go.Data([edge_trace, node_trace]),
-                    layout=go.Layout(
-                        title='<br>Network graph made with Python',
-                        titlefont=dict(size=16),
-                        showlegend=False,
-                        width=650,
-                        height=650,
-                        hovermode='closest',
-                        margin=dict(b=20, l=5, r=5, t=40),
-                        annotations=my_annotations,
-                        xaxis=go.XAxis(showgrid=False, zeroline=False, showticklabels=False),
-                        yaxis=go.YAxis(showgrid=False, zeroline=False, showticklabels=False)))
+    fig = go.Figure(
+        data=go.Data([edge_trace, node_trace]),
+        layout=go.Layout(
+            title="<br>Network graph made with Python",
+            titlefont=dict(size=16),
+            showlegend=False,
+            width=650,
+            height=650,
+            hovermode="closest",
+            margin=dict(b=20, l=5, r=5, t=40),
+            annotations=my_annotations,
+            xaxis=go.XAxis(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=go.YAxis(showgrid=False, zeroline=False, showticklabels=False),
+        ),
+    )
     return fig
 
 
@@ -150,10 +157,11 @@ class Node:
     def best_child(self, c=2, h=10):
         my_id = 0  # todo fix this
 
-        ucb1 = lambda u: (u.reward / u.visits
-                          + c * math.sqrt(math.log(self.root.visits / u.visits))
-                          + h * u.state.players[my_id].score / u.visits
-                          )
+        ucb1 = lambda u: (
+            u.reward / u.visits
+            + c * math.sqrt(math.log(self.root.visits / u.visits))
+            + h * u.state.players[my_id].score / u.visits
+        )
         best = max(self.children, key=ucb1)
 
         return best

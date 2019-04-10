@@ -8,4 +8,3 @@ class NNAgent(Agent):
 
     def step(self, obs):
         return random.choice(obs.actions)
-

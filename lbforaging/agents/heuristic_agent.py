@@ -35,6 +35,7 @@ class H1(HeuristicAgent):
     """
 	H1 agent always goes to the closest food
 	"""
+
     name = "H1"
 
     def step(self, obs):
@@ -57,6 +58,7 @@ class H2(HeuristicAgent):
     """
 	H2 Agent goes to the one visible food which is closest to the centre of visible players
 	"""
+
     name = "H2"
 
     def step(self, obs):
@@ -82,6 +84,7 @@ class H3(HeuristicAgent):
     """
 	H3 Agent always goes to the closest food with compatible level
 	"""
+
     name = "H3"
 
     def step(self, obs):
@@ -106,6 +109,7 @@ class H4(HeuristicAgent):
 	H4 Agent goes to the one visible food which is closest to all visible players
 	 such that the sum of their and H4's level is sufficient to load the food
 	"""
+
     name = "H4"
 
     def step(self, obs):
