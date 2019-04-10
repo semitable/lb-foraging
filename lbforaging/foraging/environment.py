@@ -23,6 +23,7 @@ class Player:
         self.level = None
         self.field_size = None
         self.score = None
+        self.reward = 0
         self.history = None
         self.current_step = None
 
@@ -58,8 +59,8 @@ class ForagingEnv(Env):
         ["field", "actions", "players", "game_over", "sight", "current_step"],
     )
     PlayerObservation = namedtuple(
-        "PlayerObservation", ["position", "level", "history", "score", "is_self"]
-    )  # score is available only if is_self
+        "PlayerObservation", ["position", "level", "history", "reward", "is_self"]
+    )  # reward is available only if is_self
 
     def __init__(self, players, max_player_level, field_size, max_food, sight):
         self.logger = logging.getLogger(__name__)
@@ -208,6 +209,7 @@ class ForagingEnv(Env):
         for player in self.players:
 
             attempts = 0
+            player.reward = 0
 
             while attempts < 1000:
                 row = randint(0, self.rows - 1)
@@ -267,7 +269,7 @@ class ForagingEnv(Env):
                     level=a.level,
                     is_self=a == player,
                     history=a.history,
-                    score=a.score if a == player else None,
+                    reward=a.reward if a == player else None,
                 )
                 for a in self.players
                 if min(
@@ -295,8 +297,13 @@ class ForagingEnv(Env):
 
             return obs
 
+        def get_player_reward(observation):
+            for p in observation.players:
+                if p.is_self:
+                    return p.reward
+
         nobs = [make_obs_array(obs) for obs in observations]
-        nreward = [0 for obs in observations]
+        nreward = [get_player_reward(obs) for obs in observations]
         ndone = [obs.game_over for obs in observations]
         # ninfo = [{'observation': obs} for obs in observations]
         ninfo = [{} for obs in observations]
@@ -319,6 +326,9 @@ class ForagingEnv(Env):
     def step(self, actions):
         self.current_step += 1
 
+        for p in self.players:
+            p.reward = 0
+
         # check if actions are valid
         for player, action in zip(self.players, actions):
             if action not in self._valid_actions[player]:
@@ -329,10 +339,6 @@ class ForagingEnv(Env):
                 )
                 self.logger.error(self.field)
                 raise ValueError("Invalid action attempted")
-
-            # also give a negative reward if action is not LOAD
-            if action != Action.LOAD:
-                player.score -= 0.01
 
         loading_players = set()
 
@@ -385,12 +391,15 @@ class ForagingEnv(Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                a.score += food
+                a.reward = food
             # and the food is removed
             self.field[frow, fcol] = 0
 
         self._game_over = self.field.sum() == 0
         self._gen_valid_moves()
+
+        for p in self.players:
+            p.score += p.reward
 
         observations = [self._make_obs(player) for player in self.players]
         return self._make_gym_obs(observations)
