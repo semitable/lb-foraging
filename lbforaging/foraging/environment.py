@@ -9,6 +9,7 @@ import numpy as np
 
 
 class Action(Enum):
+    NONE = 0
     NORTH = 1
     SOUTH = 2
     WEST = 3
@@ -222,8 +223,9 @@ class ForagingEnv(Env):
                 attempts += 1
 
     def _is_valid_action(self, player, action):
-
-        if action == Action.NORTH:
+        if action == Action.NONE:
+            return True
+        elif action == Action.NORTH:
             return (
                 player.position[0] > 0
                 and self.field[player.position[0] - 1, player.position[1]] == 0
@@ -329,16 +331,18 @@ class ForagingEnv(Env):
         for p in self.players:
             p.reward = 0
 
+        actions = [Action(a) if Action(a) in self._valid_actions[p] else Action.NONE for p, a in zip(self.players, actions)]
+
         # check if actions are valid
-        for player, action in zip(self.players, actions):
+        for i, (player, action) in enumerate(zip(self.players, actions)):
             if action not in self._valid_actions[player]:
-                self.logger.error(
+                self.logger.info(
                     "{}{} attempted invalid action {}.".format(
                         player.name, player.position, action
                     )
                 )
-                self.logger.error(self.field)
-                raise ValueError("Invalid action attempted")
+                actions[i] = Action.NONE
+
 
         loading_players = set()
 
@@ -348,9 +352,9 @@ class ForagingEnv(Env):
 
         # so check for collisions
         for player, action in zip(self.players, actions):
-            # if action == Action.NONE:
-            # 	collisions[player.position].append(player)
-            if action == Action.NORTH:
+            if action == Action.NONE:
+            	collisions[player.position].append(player)
+            elif action == Action.NORTH:
                 collisions[(player.position[0] - 1, player.position[1])].append(player)
             elif action == Action.SOUTH:
                 collisions[(player.position[0] + 1, player.position[1])].append(player)

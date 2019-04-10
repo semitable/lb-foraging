@@ -6,8 +6,8 @@ _WHITE = (255, 255, 255)
 _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
 
-img_apple = pygame.image.load("foraging/icons/apple.png")
-img_agent = pygame.image.load("foraging/icons/agent.png")
+img_apple = pygame.image.load("lbforaging/foraging/icons/apple.png")
+img_agent = pygame.image.load("lbforaging/foraging/icons/agent.png")
 
 
 class Viewer:
