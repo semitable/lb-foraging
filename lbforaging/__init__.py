@@ -1,13 +1,39 @@
 from gym.envs.registration import registry, register, make, spec
 
 register(
-    id="Foraging-v0",
+    id="Foraging-8x8-2p-v0",
     entry_point="lbforaging.foraging:ForagingEnv",
     kwargs={
         "players": 2,
-        "max_player_level": 2,
+        "max_player_level": 3,
         "field_size": (8, 8),
-        "max_food": 4,
+        "max_food": 3,
+        "sight": 8,
+    },
+    max_episode_steps=250,
+)
+
+register(
+    id="Foraging-5x5-2p-v0",
+    entry_point="lbforaging.foraging:ForagingEnv",
+    kwargs={
+        "players": 2,
+        "max_player_level": 3,
+        "field_size": (5, 5),
+        "max_food": 3,
+        "sight": 5,
+    },
+    max_episode_steps=250,
+)
+
+register(
+    id="Foraging-8x8-3p-v0",
+    entry_point="lbforaging.foraging:ForagingEnv",
+    kwargs={
+        "players": 3,
+        "max_player_level": 3,
+        "field_size": (8, 8),
+        "max_food": 3,
         "sight": 8,
     },
     max_episode_steps=250,
