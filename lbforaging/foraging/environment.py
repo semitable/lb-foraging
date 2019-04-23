@@ -325,7 +325,8 @@ class ForagingEnv(Env):
         self._gen_valid_moves()
 
         observations = [self._make_obs(player) for player in self.players]
-        return self._make_gym_obs(observations)
+        nobs, nreward, ndone, ninfo = self._make_gym_obs(observations)
+        return nobs
 
     def step(self, actions):
         self.current_step += 1
