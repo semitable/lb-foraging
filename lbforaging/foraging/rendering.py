@@ -1,4 +1,5 @@
 import pygame
+import os
 
 # Define some colors
 _BLACK = (0, 0, 0)
@@ -6,9 +7,10 @@ _WHITE = (255, 255, 255)
 _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
 
-img_apple = pygame.image.load("lbforaging/foraging/icons/apple.png")
-img_agent = pygame.image.load("lbforaging/foraging/icons/agent.png")
+script_dir = os.path.dirname(__file__)
 
+img_apple = pygame.image.load(os.path.join(script_dir, "icons/apple.png"))
+img_agent = pygame.image.load(os.path.join(script_dir, "icons/agent.png"))
 
 class Viewer:
     def __init__(self, world_size):
