@@ -65,7 +65,7 @@ class ForagingEnv(Env):
         "PlayerObservation", ["position", "level", "history", "reward", "is_self"]
     )  # reward is available only if is_self
 
-    def __init__(self, players, max_player_level, field_size, max_food, sight):
+    def __init__(self, players, max_player_level, field_size, max_food, sight, max_episode_steps):
         self.logger = logging.getLogger(__name__)
         self.players = [Player() for _ in range(players)]
 
@@ -81,6 +81,7 @@ class ForagingEnv(Env):
 
         self._rendering_initialized = False
         self._valid_actions = None
+        self._max_episode_steps = max_episode_steps
 
     def _get_observation_space(self):
         """The Observation Space for each agent.
@@ -404,7 +405,7 @@ class ForagingEnv(Env):
             # and the food is removed
             self.field[frow, fcol] = 0
 
-        self._game_over = self.field.sum() == 0
+        self._game_over = self.field.sum() == 0 or self._max_episode_steps <= self.current_step
         self._gen_valid_moves()
 
         for p in self.players:

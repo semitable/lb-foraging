@@ -9,8 +9,8 @@ register(
         "field_size": (8, 8),
         "max_food": 3,
         "sight": 8,
+        "max_episode_steps": 100,
     },
-    max_episode_steps=250,
 )
 
 register(
@@ -22,8 +22,8 @@ register(
         "field_size": (5, 5),
         "max_food": 3,
         "sight": 5,
+        "max_episode_steps": 100,
     },
-    max_episode_steps=250,
 )
 
 register(
@@ -35,6 +35,6 @@ register(
         "field_size": (8, 8),
         "max_food": 3,
         "sight": 8,
+        "max_episode_steps": 100,
     },
-    max_episode_steps=250,
 )
