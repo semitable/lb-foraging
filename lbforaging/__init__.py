@@ -9,7 +9,7 @@ register(
         "field_size": (8, 8),
         "max_food": 3,
         "sight": 8,
-        "max_episode_steps": 100,
+        "max_episode_steps": 50,
     },
 )
 
@@ -20,9 +20,9 @@ register(
         "players": 2,
         "max_player_level": 3,
         "field_size": (5, 5),
-        "max_food": 3,
+        "max_food": 1,
         "sight": 5,
-        "max_episode_steps": 100,
+        "max_episode_steps": 50,
     },
 )
 
@@ -35,6 +35,6 @@ register(
         "field_size": (8, 8),
         "max_food": 3,
         "sight": 8,
-        "max_episode_steps": 100,
+        "max_episode_steps": 50,
     },
 )
