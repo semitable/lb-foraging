@@ -65,13 +65,16 @@ class ForagingEnv(Env):
         "PlayerObservation", ["position", "level", "history", "reward", "is_self"]
     )  # reward is available only if is_self
 
-    def __init__(self, players, max_player_level, field_size, max_food, sight, max_episode_steps):
+    def __init__(
+        self, players, max_player_level, field_size, max_food, sight, max_episode_steps
+    ):
         self.logger = logging.getLogger(__name__)
         self.players = [Player() for _ in range(players)]
 
         self.field = np.zeros(field_size, np.int32)
 
         self.max_food = max_food
+        self._food_spawned = 0.0
         self.max_player_level = max_player_level
         self.sight = sight
         self._game_over = None
@@ -199,6 +202,7 @@ class ForagingEnv(Env):
 
             self.field[row, col] = randint(1, max_level)
             food_count += 1
+        self._food_spawned = self.field.sum()
 
     def _is_empty_location(self, row, col):
 
@@ -298,19 +302,19 @@ class ForagingEnv(Env):
             obs = np.zeros(self.observation_space.shape)
             # obs[: observation.field.size] = observation.field.flatten()
             for i in range(self.max_food):
-                obs[3*i] = -1
-                obs[3*i+1] = -1
-                obs[3*i+2] = 0
+                obs[3 * i] = -1
+                obs[3 * i + 1] = -1
+                obs[3 * i + 2] = 0
 
             for i, (y, x) in enumerate(zip(*np.nonzero(observation.field))):
-                obs[3*i] = y
-                obs[3*i+1] = x
-                obs[3*i+2] = observation.field[y,x]
+                obs[3 * i] = y
+                obs[3 * i + 1] = x
+                obs[3 * i + 2] = observation.field[y, x]
 
             for i, p in enumerate(observation.players):
-                obs[self.max_food*3 + 3 * i] = p.position[0]
-                obs[self.max_food*3 + 3 * i + 1] = p.position[1]
-                obs[self.max_food*3 + 3 * i + 2] = p.level
+                obs[self.max_food * 3 + 3 * i] = p.position[0]
+                obs[self.max_food * 3 + 3 * i + 1] = p.position[1]
+                obs[self.max_food * 3 + 3 * i + 2] = p.level
 
             return obs
 
@@ -413,11 +417,13 @@ class ForagingEnv(Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                a.reward = food
+                a.reward = float(food) / self._food_spawned  # normalize reward
             # and the food is removed
             self.field[frow, fcol] = 0
 
-        self._game_over = self.field.sum() == 0 or self._max_episode_steps <= self.current_step
+        self._game_over = (
+            self.field.sum() == 0 or self._max_episode_steps <= self.current_step
+        )
         self._gen_valid_moves()
 
         for p in self.players:

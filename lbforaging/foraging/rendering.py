@@ -12,6 +12,7 @@ script_dir = os.path.dirname(__file__)
 img_apple = pygame.image.load(os.path.join(script_dir, "icons/apple.png"))
 img_agent = pygame.image.load(os.path.join(script_dir, "icons/agent.png"))
 
+
 class Viewer:
     def __init__(self, world_size):
 
