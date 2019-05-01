@@ -38,7 +38,7 @@ def _game_loop(env, render):
 
 
 def main(game_count=1, render=False):
-    env = gym.make("Foraging-v0")
+    env = gym.make("Foraging-8x8-2p-v0")
     obs = env.reset()
 
     for episode in range(game_count):

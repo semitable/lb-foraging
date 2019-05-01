@@ -90,11 +90,13 @@ class ForagingEnv(Env):
         """
         field_x = self.field.shape[1]
         field_y = self.field.shape[0]
-        field_size = field_x * field_y
+        # field_size = field_x * field_y
+
+        max_food = self.max_food
         max_food_level = self.max_player_level * len(self.players)
 
-        min_obs = [0] * field_size + [0, 0, 1] * len(self.players)
-        max_obs = [max_food_level] * field_size + [
+        min_obs = [-1, -1, 0] * max_food + [0, 0, 1] * len(self.players)
+        max_obs = [field_x, field_y, max_food_level] * max_food + [
             field_x,
             field_y,
             self.max_player_level,
@@ -294,11 +296,21 @@ class ForagingEnv(Env):
     def _make_gym_obs(self, observations):
         def make_obs_array(observation):
             obs = np.zeros(self.observation_space.shape)
-            obs[: observation.field.size] = observation.field.flatten()
+            # obs[: observation.field.size] = observation.field.flatten()
+            for i in range(self.max_food):
+                obs[3*i] = -1
+                obs[3*i+1] = -1
+                obs[3*i+2] = 0
+
+            for i, (y, x) in enumerate(zip(*np.nonzero(observation.field))):
+                obs[3*i] = y
+                obs[3*i+1] = x
+                obs[3*i+2] = observation.field[y,x]
+
             for i, p in enumerate(observation.players):
-                obs[observation.field.size + 3 * i] = p.position[0]
-                obs[observation.field.size + 3 * i + 1] = p.position[1]
-                obs[observation.field.size + 3 * i + 2] = p.level
+                obs[self.max_food*3 + 3 * i] = p.position[0]
+                obs[self.max_food*3 + 3 * i + 1] = p.position[1]
+                obs[self.max_food*3 + 3 * i + 2] = p.level
 
             return obs
 
