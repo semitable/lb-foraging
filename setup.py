@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lbforaging",
-    version="1.0.3",
+    version="1.0.4",
     description="Level Based Foraging Environment",
     author="Filippos Christianos",
     url="https://github.com/semitable/lb-foraging",
@@ -18,4 +18,5 @@ setup(
     ],
     install_requires=["numpy", "gym"],
     extras_require={"test": ["pytest"]},
+    include_package_data=True,
 )
