@@ -1,52 +1,20 @@
 from gym.envs.registration import registry, register, make, spec
+from itertools import product
 
-register(
-    id="Foraging-8x8-2p-3f-v0",
-    entry_point="lbforaging.foraging:ForagingEnv",
-    kwargs={
-        "players": 2,
-        "max_player_level": 3,
-        "field_size": (8, 8),
-        "max_food": 3,
-        "sight": 8,
-        "max_episode_steps": 50,
-    },
-)
+sizes = range(5,11)
+players = range(2,5)
+foods = range(2,5)
 
-register(
-    id="Foraging-5x5-2p-3f-v0",
-    entry_point="lbforaging.foraging:ForagingEnv",
-    kwargs={
-        "players": 2,
-        "max_player_level": 3,
-        "field_size": (5, 5),
-        "max_food": 3,
-        "sight": 5,
-        "max_episode_steps": 50,
-    },
-)
-register(
-    id="Foraging-5x5-2p-1f-v0",
-    entry_point="lbforaging.foraging:ForagingEnv",
-    kwargs={
-        "players": 2,
-        "max_player_level": 3,
-        "field_size": (5, 5),
-        "max_food": 1,
-        "sight": 5,
-        "max_episode_steps": 50,
-    },
-)
-
-register(
-    id="Foraging-8x8-3p-3f-v0",
-    entry_point="lbforaging.foraging:ForagingEnv",
-    kwargs={
-        "players": 3,
-        "max_player_level": 3,
-        "field_size": (8, 8),
-        "max_food": 3,
-        "sight": 8,
-        "max_episode_steps": 50,
-    },
-)
+for s, p, f in product(sizes, players, foods):
+    register(
+        id="Foraging-{0}x{0}-{1}p-{2}f-v0".format(s, p, f),
+        entry_point="lbforaging.foraging:ForagingEnv",
+        kwargs={
+            "players": p,
+            "max_player_level": 3,
+            "field_size": (s, s),
+            "max_food": f,
+            "sight": s,
+            "max_episode_steps": 50,
+        },
+    )
