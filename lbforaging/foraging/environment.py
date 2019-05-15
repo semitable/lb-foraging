@@ -2,9 +2,9 @@ import logging
 from collections import namedtuple, defaultdict
 from enum import Enum
 from itertools import product
-from random import randint
 from gym import Env
 import gym
+from gym.utils import seeding
 import numpy as np
 
 
@@ -69,6 +69,7 @@ class ForagingEnv(Env):
         self, players, max_player_level, field_size, max_food, sight, max_episode_steps
     ):
         self.logger = logging.getLogger(__name__)
+        self.seed()
         self.players = [Player() for _ in range(players)]
 
         self.field = np.zeros(field_size, np.int32)
@@ -85,6 +86,11 @@ class ForagingEnv(Env):
         self._rendering_initialized = False
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
+
+
+    def seed(self, seed=None):
+        self.np_random, seed = seeding.np_random(seed)
+        return [seed]
 
     def _get_observation_space(self):
         """The Observation Space for each agent.
@@ -191,8 +197,8 @@ class ForagingEnv(Env):
 
         while food_count < max_food and attempts < 1000:
             attempts += 1
-            row = randint(1, self.rows - 2)
-            col = randint(1, self.cols - 2)
+            row = self.np_random.randint(1, self.rows - 2)
+            col = self.np_random.randint(1, self.cols - 2)
 
             # check if it has neighbors:
             if self.neighborhood(
@@ -200,7 +206,7 @@ class ForagingEnv(Env):
             ).sum() > 0 or not self._is_empty_location(row, col):
                 continue
 
-            self.field[row, col] = randint(1, max_level)
+            self.field[row, col] = self.np_random.randint(1, max_level)
             food_count += 1
         self._food_spawned = self.field.sum()
 
@@ -222,11 +228,11 @@ class ForagingEnv(Env):
             player.reward = 0
 
             while attempts < 1000:
-                row = randint(0, self.rows - 1)
-                col = randint(0, self.cols - 1)
+                row = self.np_random.randint(0, self.rows - 1)
+                col = self.np_random.randint(0, self.cols - 1)
                 if self._is_empty_location(row, col):
                     player.setup(
-                        (row, col), randint(1, max_player_level), self.field_size
+                        (row, col), self.np_random.randint(1, max_player_level), self.field_size
                     )
                     break
                 attempts += 1
