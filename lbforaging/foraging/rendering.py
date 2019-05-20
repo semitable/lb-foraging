@@ -43,8 +43,12 @@ class Viewer:
         self._draw_grid()
         self._draw_food(env)
         self._draw_players(env)
-
         pygame.display.flip()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
 
     def _draw_grid(self):
         for r in range(self.rows + 1):
