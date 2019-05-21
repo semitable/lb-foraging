@@ -1,9 +1,9 @@
 from gym.envs.registration import registry, register, make, spec
 from itertools import product
 
-sizes = range(5,11)
-players = range(2,5)
-foods = range(1,5)
+sizes = range(5, 11)
+players = range(2, 5)
+foods = range(1, 5)
 
 for s, p, f in product(sizes, players, foods):
     register(

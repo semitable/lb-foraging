@@ -87,7 +87,6 @@ class ForagingEnv(Env):
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
 
-
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
@@ -155,12 +154,21 @@ class ForagingEnv(Env):
             for player in self.players
         }
 
-    def neighborhood(self, row, col, distance=1):
+    def neighborhood(self, row, col, distance=1, ignore_diag=False):
+        if not ignore_diag:
+            return self.field[
+                max(row - distance, 0) : min(row + distance + 1, self.rows),
+                max(col - distance, 0) : min(col + distance + 1, self.cols),
+            ]
 
-        return self.field[
-            max(row - distance, 0) : min(row + distance + 1, self.rows),
-            max(col - distance, 0) : min(col + distance + 1, self.cols),
-        ]
+        return (
+            self.field[
+                max(row - distance, 0) : min(row + distance + 1, self.rows), col
+            ].sum()
+            + self.field[
+                row, max(col - distance, 0) : min(col + distance + 1, self.cols)
+            ].sum()
+        )
 
     def adjacent_food(self, row, col):
         return (
@@ -197,13 +205,15 @@ class ForagingEnv(Env):
 
         while food_count < max_food and attempts < 1000:
             attempts += 1
-            row = self.np_random.randint(1, self.rows - 2)
-            col = self.np_random.randint(1, self.cols - 2)
+            row = self.np_random.randint(1, self.rows - 1)
+            col = self.np_random.randint(1, self.cols - 1)
 
             # check if it has neighbors:
-            if self.neighborhood(
-                row, col, distance=2
-            ).sum() > 0 or not self._is_empty_location(row, col):
+            if (
+                self.neighborhood(row, col).sum() > 0
+                or self.neighborhood(row, col, distance=2, ignore_diag=True) > 0
+                or not self._is_empty_location(row, col)
+            ):
                 continue
 
             self.field[row, col] = self.np_random.randint(1, max_level)
@@ -232,7 +242,9 @@ class ForagingEnv(Env):
                 col = self.np_random.randint(0, self.cols - 1)
                 if self._is_empty_location(row, col):
                     player.setup(
-                        (row, col), self.np_random.randint(1, max_player_level), self.field_size
+                        (row, col),
+                        self.np_random.randint(1, max_player_level),
+                        self.field_size,
                     )
                     break
                 attempts += 1

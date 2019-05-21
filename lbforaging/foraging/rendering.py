@@ -49,7 +49,6 @@ class Viewer:
             if event.type == pygame.QUIT:
                 pygame.quit()
 
-
     def _draw_grid(self):
         for r in range(self.rows + 1):
             pygame.draw.line(
