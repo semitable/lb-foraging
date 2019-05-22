@@ -210,7 +210,7 @@ class ForagingEnv(Env):
 
         food_count = 0
         attempts = 0
-        min_level = max([p.level for p in self.players]) + 1 if self.force_coop else 1
+        min_level = max_level if self.force_coop else 1
 
         while food_count < max_food and attempts < 1000:
             attempts += 1
