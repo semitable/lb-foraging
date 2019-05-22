@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lbforaging",
-    version="1.0.11",
+    version="1.0.12",
     description="Level Based Foraging Environment",
     author="Filippos Christianos",
     url="https://github.com/semitable/lb-foraging",
