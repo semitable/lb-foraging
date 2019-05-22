@@ -66,7 +66,14 @@ class ForagingEnv(Env):
     )  # reward is available only if is_self
 
     def __init__(
-        self, players, max_player_level, field_size, max_food, sight, max_episode_steps, force_coop
+        self,
+        players,
+        max_player_level,
+        field_size,
+        max_food,
+        sight,
+        max_episode_steps,
+        force_coop,
     ):
         self.logger = logging.getLogger(__name__)
         self.seed()
@@ -218,7 +225,11 @@ class ForagingEnv(Env):
             ):
                 continue
 
-            self.field[row, col] = min_level if min_level == max_level else self.np_random.randint(min_level, max_level)
+            self.field[row, col] = (
+                min_level
+                if min_level == max_level
+                else self.np_random.randint(min_level, max_level)
+            )
             food_count += 1
         self._food_spawned = self.field.sum()
 
@@ -437,7 +448,9 @@ class ForagingEnv(Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                a.reward = float(food) / self._food_spawned  # normalize reward
+                a.reward = float(a.level * food) / float(
+                    adj_player_level * self._food_spawned
+                )  # normalize reward
             # and the food is removed
             self.field[frow, fcol] = 0
 

@@ -17,6 +17,6 @@ for s, p, f, c in product(sizes, players, foods, coop):
             "max_food": f,
             "sight": s,
             "max_episode_steps": 50,
-            "force_coop": c
+            "force_coop": c,
         },
     )
