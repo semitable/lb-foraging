@@ -81,8 +81,8 @@ class ForagingEnv(Env):
         self.force_coop = force_coop
         self._game_over = None
 
-        self.action_space = gym.spaces.Discrete(6)
-        self.observation_space = self._get_observation_space()
+        self.action_space = [gym.spaces.Discrete(6)] * len(self.players)
+        self.observation_space = [self._get_observation_space()] * len(self.players)
 
         self._rendering_initialized = False
         self._valid_actions = None
@@ -319,7 +319,7 @@ class ForagingEnv(Env):
 
     def _make_gym_obs(self, observations):
         def make_obs_array(observation):
-            obs = np.zeros(self.observation_space.shape)
+            obs = np.zeros(self.observation_space[0].shape)
             # obs[: observation.field.size] = observation.field.flatten()
             for i in range(self.max_food):
                 obs[3 * i] = -1
