@@ -16,7 +16,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    install_requires=["numpy", "gym>=0.12"],
-    extras_require={"test": ["pytest"], "render": ["pygame>=1.9"]},
+    install_requires=["numpy", "gym>=0.12", "pyglet"],
+    extras_require={"test": ["pytest"]},
     include_package_data=True,
 )
