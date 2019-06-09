@@ -467,8 +467,8 @@ class ForagingEnv(Env):
 
     def _init_render(self):
         from .rendering import Viewer
-
         self.viewer = Viewer((self.rows, self.cols))
+        self._rendering_initialized = True
 
     def render(self, mode="human"):
         if not self._rendering_initialized:
