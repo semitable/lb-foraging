@@ -118,6 +118,27 @@ register(
 )
 ```
 
+Similarly to Gym, but adapted to multi-agent settings step() function is defined as
+```python
+nobs, nreward, ndone, ninfo = env.step(actions)
+```
+
+Where n-obs, n-rewards, n-done and n-info are LISTS of N items (where N is the number of agents). The i'th element of each list should be assigned to the i'th agent.
+
+actions is a LIST of N INTEGERS (one of each agent) that should be executed in that step. The integers should correspond to the Enum below:
+
+```python
+class Action(Enum):
+    NONE = 0
+    NORTH = 1
+    SOUTH = 2
+    WEST = 3
+    EAST = 4
+    LOAD = 5
+```
+
+
+
 <!-- CONTRIBUTING -->
 ## Contributing
 
