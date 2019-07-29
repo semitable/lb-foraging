@@ -1,6 +1,151 @@
-# Level-Based Foraging
+<!-- PROJECT SHIELDS -->
+[![Build Status][build-shield]]()
+[![Contributors][contributors-shield]]()
 
-A multi-agent reinforcement learning environment built around OpenAI's gym.
 
 
-L
+<!-- PROJECT LOGO -->
+<br />
+<p align="center">
+  <a href="https://github.com/othneildrew/Best-README-Template">
+    <img src="logo.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">Level-Based Foraging Environment</h3>
+
+  <p align="center">
+    A multi-agent environment, based on OpenAI's Gym framework.
+    <br />
+    <a href=""><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="">View Demo</a>
+    ·
+    <a href="https://github.com/semitable/lb-foraging/issues">Report Bug</a>
+    ·
+    <a href="https://github.com/semitable/lb-foraging/issues">Request Feature</a>
+  </p>
+</p>
+
+
+
+<!-- TABLE OF CONTENTS -->
+## Table of Contents
+
+* [About the Project](#about-the-project)
+  * [Built With](#built-with)
+* [Getting Started](#getting-started)
+  * [Prerequisites](#prerequisites)
+  * [Installation](#installation)
+* [Usage](#usage)
+* [Contributing](#contributing)
+* [License](#license)
+* [Contact](#contact)
+* [Acknowledgements](#acknowledgements)
+
+
+
+<!-- ABOUT THE PROJECT -->
+## About The Project
+
+[![Product Name Screen Shot][product-screenshot]](https://example.com)
+
+This environment is a mixed cooperative-competitive game, which focuses on the coordination of the agents involved. Agents navigate a grid world and collect food by cooperating with other agents if needed.
+
+More specifically, agents are placed in the grid world, and each is assigned a level. Food is also randomly scattered, each having a level on its own. Agents can navigate the environment and can attempt to collect food placed next to them. The collection of food is successful only if the sum of the levels of the agents involved in loading is equal to or higher than the level of the food. Finally, agents are awarded points equal to the level of the food they helped collect, divided by their contribution (their level). The figures below show two states of the game, one that requires cooperation, and one more competitive.
+
+{ADD FIGURES}
+
+While it may appear simple, this is a very challenging environment, requiring the cooperation of multiple agents while being competitive at the same time. In addition, the discount factor also necessitates speed for the maximisation of rewards. Each agent is only awarded points if it participates in the collection of food, and it has to balance between collecting low-levelled food on his own or cooperating in acquiring higher rewards. In situations with three or more agents, highly strategic decisions can be required, involving agents needing to choose with whom to cooperate. Another significant difficulty for RL algorithms is the sparsity of rewards, which causes slower learning.
+
+This is a Python simulator for level based foraging. It is based on OpenAI's RL framework, with modifications for the multi-agent domain. The efficient implementation allows for thousands of simulation steps per second on a single thread, while the rendering capabilities allows humans to visualise agent actions. Our implementation can support different grid sizes or agent/food count. Also, game variants are implemented, such as cooperative mode (agents always need to cooperate) and shared reward (all agents always get the same reward), which is attractive as a credit assignment problem.
+
+
+
+### Built With
+This section should list any major frameworks that you built your project using. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
+* [Python](https://www.python.org)
+* [OpenAI's Gym](https://gym.openai.com/)
+* [pyglet](https://github.com/pyglet/pyglet)
+
+
+
+<!-- GETTING STARTED -->
+## Getting Started
+
+### Installation
+
+1. Install using pip
+```sh
+pip install lbforaging
+```
+
+<!-- USAGE EXAMPLES -->
+## Usage
+
+Create environments with the gym framework.
+First import
+```python
+import lbforaging
+```
+
+Then create an environment:
+```python
+env = gym.make("Foraging-8x8-2p-1f-v0")
+```
+
+We offer a variety of environments using this template:
+```
+"Foraging-{GRID_SIZE}x{GRID_SIZE}-{PLAYER COUNT}p-{FOOD LOCATIONS}f{-coop IF COOPERATIVE MODE}-v0"
+```
+
+But you can register your own variation using (change parameters as needed):
+```python
+from gym.envs.registration register
+
+register(
+    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v0".format(s, p, f, "-coop" if c else ""),
+    entry_point="lbforaging.foraging:ForagingEnv",
+    kwargs={
+        "players": p,
+        "max_player_level": 3,
+        "field_size": (s, s),
+        "max_food": f,
+        "sight": s,
+        "max_episode_steps": 50,
+        "force_coop": c,
+    },
+)
+```
+
+<!-- CONTRIBUTING -->
+## Contributing
+
+Contributions are what make the open source community such an amazing place to be learn, inspire, and create. Any contributions you make are **greatly appreciated**.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+
+<!-- LICENSE -->
+## License
+
+Not yet available
+
+
+
+<!-- CONTACT -->
+## Contact
+
+Filippos Christianos - f.christianos@ed.ac.uk
+
+Project Link: [https://github.com/semitable/lb-foraging](https://github.com/semitable/lb-foraging)
+
+
+
+<!-- ACKNOWLEDGEMENTS -->
+## Acknowledgements
+---
