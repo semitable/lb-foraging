@@ -1,6 +1,6 @@
 import logging
 from collections import namedtuple, defaultdict
-from enum import Enum
+from enum import IntEnum
 from itertools import product
 from gym import Env
 import gym
@@ -8,7 +8,7 @@ from gym.utils import seeding
 import numpy as np
 
 
-class Action(Enum):
+class Action(IntEnum):
     NONE = 0
     NORTH = 1
     SOUTH = 2
@@ -360,7 +360,8 @@ class ForagingEnv(Env):
         # ninfo = [{'observation': obs} for obs in observations]
         ninfo = [{} for obs in observations]
 
-        return nobs, nreward, ndone, ninfo
+        # todo this?:
+        return list(zip(observations,nobs)), nreward, ndone, ninfo
 
     def reset(self):
         self.field = np.zeros(self.field_size, np.int32)

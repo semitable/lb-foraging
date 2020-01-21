@@ -1,7 +1,7 @@
 import random
 import numpy as np
-from foraging import Agent
-from foraging.environment import Action
+from lbforaging.foraging.agent import Agent
+from lbforaging.foraging.environment import Action
 
 
 class HeuristicAgent(Agent):

@@ -5,6 +5,7 @@ import time
 import gym
 import numpy as np
 import lbforaging.foraging
+from lbforaging.agents import H1, H2, H3, H4
 
 
 logger = logging.getLogger(__name__)
@@ -16,6 +17,9 @@ def _game_loop(env, render):
     obs = env.reset()
     done = False
 
+    agent1 = H2(env.players[0])
+    agent2 = H3(env.players[1])
+
     if render:
         env.render()
         time.sleep(0.5)
@@ -23,8 +27,12 @@ def _game_loop(env, render):
     while not done:
 
         actions = []
-        for i, player in enumerate(env.players):
-            actions.append(env.action_space.sample())
+
+        obs1 = obs[0][0]
+        obs2 = obs[1][0]
+
+        actions = [agent1._step(obs1), agent2._step(obs2)]
+
         nobs, nreward, ndone, _ = env.step(actions)
         if sum(nreward) > 0:
             print(nreward)
@@ -33,12 +41,13 @@ def _game_loop(env, render):
             env.render()
             time.sleep(0.5)
 
+        obs = nobs
         done = np.all(ndone)
     # print(env.players[0].score, env.players[1].score)
 
 
 def main(game_count=1, render=False):
-    env = gym.make("Foraging-8x8-2p-v0")
+    env = gym.make("Foraging-10x10-2p-4f-v0")
     obs = env.reset()
 
     for episode in range(game_count):

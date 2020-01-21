@@ -25,7 +25,7 @@ class Agent:
 
         # saves the action to the history
         action = self.step(obs)
-        self.history.append(action)
+        # self.history.append(action)
 
         return action
 
