@@ -317,12 +317,20 @@ class ForagingEnv(Env):
                     reward=a.reward if a == player else None,
                 )
                 for a in self.players
-                if min(
+                if (
+                    min(
+                        self._transform_to_neighborhood(
+                            player.position, self.sight, a.position
+                        )
+                    )
+                    >= 0
+                )
+                and max(
                     self._transform_to_neighborhood(
                         player.position, self.sight, a.position
                     )
                 )
-                >= 0
+                <= 2*self.sight
             ],
             # todo also check max?
             field=np.copy(self.neighborhood(*player.position, self.sight)),
@@ -335,6 +343,9 @@ class ForagingEnv(Env):
         def make_obs_array(observation):
             obs = np.zeros(self.observation_space[0].shape)
             # obs[: observation.field.size] = observation.field.flatten()
+            # self player is always first
+            seen_players = [p for p in observation.players if p.is_self] + [p for p in observation.players if not p.is_self]
+            
             for i in range(self.max_food):
                 obs[3 * i] = -1
                 obs[3 * i + 1] = -1
@@ -345,7 +356,12 @@ class ForagingEnv(Env):
                 obs[3 * i + 1] = x
                 obs[3 * i + 2] = observation.field[y, x]
 
-            for i, p in enumerate(observation.players):
+            for i in range(len(self.players)):
+                obs[self.max_food * 3 + 3 * i] = -1
+                obs[self.max_food * 3 + 3 * i + 1] = -1
+                obs[self.max_food * 3 + 3 * i + 2] = 0
+
+            for i, p in enumerate(seen_players):
                 obs[self.max_food * 3 + 3 * i] = p.position[0]
                 obs[self.max_food * 3 + 3 * i + 1] = p.position[1]
                 obs[self.max_food * 3 + 3 * i + 2] = p.level
@@ -451,10 +467,11 @@ class ForagingEnv(Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                a.reward = float(a.level * food) 
-                
+                a.reward = float(a.level * food)
                 if self._normalize_reward:
-                    a.reward = a.reward / float(adj_player_level * self._food_spawned)  # normalize reward
+                    a.reward = a.reward / float(
+                        adj_player_level * self._food_spawned
+                    )  # normalize reward
             # and the food is removed
             self.field[frow, fcol] = 0
 
@@ -471,6 +488,7 @@ class ForagingEnv(Env):
 
     def _init_render(self):
         from .rendering import Viewer
+
         self.viewer = Viewer((self.rows, self.cols))
         self._rendering_initialized = True
 
