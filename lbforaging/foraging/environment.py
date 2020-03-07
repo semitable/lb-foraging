@@ -74,6 +74,7 @@ class ForagingEnv(Env):
         sight,
         max_episode_steps,
         force_coop,
+        normalize_reward=True,
     ):
         self.logger = logging.getLogger(__name__)
         self.seed()
@@ -94,6 +95,8 @@ class ForagingEnv(Env):
         self._rendering_initialized = False
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
+
+        self._normalize_reward = normalize_reward
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -448,9 +451,10 @@ class ForagingEnv(Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                a.reward = float(a.level * food) / float(
-                    adj_player_level * self._food_spawned
-                )  # normalize reward
+                a.reward = float(a.level * food) 
+                
+                if self._normalize_reward:
+                    a.reward = a.reward / float(adj_player_level * self._food_spawned)  # normalize reward
             # and the food is removed
             self.field[frow, fcol] = 0
 
