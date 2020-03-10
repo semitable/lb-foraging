@@ -97,8 +97,8 @@ class ForagingEnv(Env):
         self._rendering_initialized = False
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
+        self._normalize_reward = normalize_reward
 
-<<<<<<< HEAD
     @property
     def action_space(self):
         return [gym.spaces.Discrete(6)] * len([p for p in self.players if p.active])
@@ -106,9 +106,6 @@ class ForagingEnv(Env):
     @property
     def observation_space(self):
         return [gym.spaces.Discrete(6)] * len([p for p in self.players if p.active])
-=======
-        self._normalize_reward = normalize_reward
->>>>>>> fd46cdb4b88726a9c895b82b0b2a8251c6bb3df5
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -186,7 +183,7 @@ class ForagingEnv(Env):
                 self.players[id].active = True
                 break
             attempts += 1
-    
+
     def remove_agent(id):
         self.players[id].active = False
         self.players[id].position = (-1, -1)
@@ -361,12 +358,15 @@ class ForagingEnv(Env):
                     )
                     >= 0
                 )
-                and max(
-                    self._transform_to_neighborhood(
-                        player.position, self.sight, a.position
+                and (
+                    max(
+                        self._transform_to_neighborhood(
+                            player.position, self.sight, a.position
+                        )
                     )
                 )
-                <= 2*self.sight
+                <= 2 * self.sight
+                and a.active
             ],
             # todo also check max?
             field=np.copy(self.neighborhood(*player.position, self.sight)),
@@ -380,8 +380,10 @@ class ForagingEnv(Env):
             obs = np.zeros(self.observation_space[0].shape)
             # obs[: observation.field.size] = observation.field.flatten()
             # self player is always first
-            seen_players = [p for p in observation.players if p.is_self] + [p for p in observation.players if not p.is_self]
-            
+            seen_players = [p for p in observation.players if p.is_self] + [
+                p for p in observation.players if not p.is_self
+            ]
+
             for i in range(self.max_food):
                 obs[3 * i] = -1
                 obs[3 * i + 1] = -1
@@ -416,7 +418,7 @@ class ForagingEnv(Env):
         ninfo = [{} for obs in observations]
 
         # todo this?:
-        return list(zip(observations,nobs)), nreward, ndone, ninfo
+        return list(zip(observations, nobs)), nreward, ndone, ninfo
 
     def reset(self):
         self.field = np.zeros(self.field_size, np.int32)
