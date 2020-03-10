@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import lbforaging
+from lbforaging.foraging.environment import Action
 import gym
 
 
@@ -10,6 +11,44 @@ def manhattan_distance(x,y):
 @pytest.fixture
 def simple2p1f():
     env = gym.make("Foraging-8x8-2p-1f-v0")
+    _ = env.reset()
+    import time
+
+    env.field[:] = 0
+
+    env.field[4,4] = 2
+    env._food_spawned = env.field.sum()
+
+    env.players[0].position = (4,3)
+    env.players[1].position = (4,5)
+
+    env.players[0].level = 2
+    env.players[1].level = 2
+    env._gen_valid_moves()
+    return env
+
+@pytest.fixture
+def simple2p1f_sight1():
+    env = gym.make("Foraging-8x8-2p-1f-v0", sight=1)
+    _ = env.reset()
+    import time
+
+    env.field[:] = 0
+
+    env.field[4,4] = 2
+    env._food_spawned = env.field.sum()
+
+    env.players[0].position = (4,3)
+    env.players[1].position = (4,5)
+
+    env.players[0].level = 2
+    env.players[1].level = 2
+    env._gen_valid_moves()
+    return env
+
+@pytest.fixture
+def simple2p1f_sight2():
+    env = gym.make("Foraging-8x8-2p-1f-v0", sight=2)
     _ = env.reset()
     import time
 
@@ -97,3 +136,37 @@ def test_reward_1(simple2p1f):
     _, rewards, _, _ = simple2p1f.step([0, 5])
     assert rewards[0] == 0
     assert rewards[1] == 1
+
+def test_partial_obs_1(simple2p1f_sight1):
+    env = simple2p1f_sight1
+    obs = [env._make_obs(player) for player in env.players]
+    obs, _, _, _ = env._make_gym_obs(obs)
+
+    assert obs[0][-2] == -1
+    assert obs[1][-2] == -1
+
+def test_partial_obs_2(simple2p1f_sight2):
+    env = simple2p1f_sight2
+    obs = [env._make_obs(player) for player in env.players]
+    obs, _, _, _ = env._make_gym_obs(obs)
+
+    assert obs[0][-2] > -1
+    assert obs[1][-2] > -1
+
+    obs, _, _, _ = env.step([Action.WEST, Action.NONE])
+
+    assert obs[0][-2] == -1
+    assert obs[1][-2] == -1
+
+def test_partial_obs_3(simple2p1f):
+    env = simple2p1f
+    obs = [env._make_obs(player) for player in env.players]
+    obs, _, _, _ = env._make_gym_obs(obs)
+
+    assert obs[0][-2] > -1
+    assert obs[1][-2] > -1
+
+    obs, _, _, _ = env.step([Action.WEST, Action.NONE])
+
+    assert obs[0][-2] > -1
+    assert obs[1][-2] > -1
