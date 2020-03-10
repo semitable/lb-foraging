@@ -28,6 +28,8 @@ class Player:
         self.history = None
         self.current_step = None
 
+        self.active = False
+
     def setup(self, position, level, field_size):
         self.history = []
         self.position = position
@@ -88,12 +90,20 @@ class ForagingEnv(Env):
         self.force_coop = force_coop
         self._game_over = None
 
-        self.action_space = [gym.spaces.Discrete(6)] * len(self.players)
-        self.observation_space = [self._get_observation_space()] * len(self.players)
+        # self.action_space = [gym.spaces.Discrete(6)] * len(self.players)
+        # self.observation_space = [self._get_observation_space()] * len(self.players)
 
         self._rendering_initialized = False
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
+
+    @property
+    def action_space(self):
+        return [gym.spaces.Discrete(6)] * len([p for p in self.players if p.active])
+
+    @property
+    def observation_space(self):
+        return [gym.spaces.Discrete(6)] * len([p for p in self.players if p.active])
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -153,6 +163,28 @@ class ForagingEnv(Env):
     @property
     def game_over(self):
         return self._game_over
+
+    def add_agent(id):
+        if self.players[id].active:
+            self.logger.warning("Agent already active.")
+            return
+
+        while attempts < 1000:
+            row = self.np_random.randint(0, self.rows - 1)
+            col = self.np_random.randint(0, self.cols - 1)
+            if self._is_empty_location(row, col):
+                player.setup(
+                    (row, col),
+                    self.np_random.randint(1, max_player_level),
+                    self.field_size,
+                )
+                self.players[id].active = True
+                break
+            attempts += 1
+    
+    def remove_agent(id):
+        self.players[id].active = False
+        self.players[id].position = (-1, -1)
 
     def _gen_valid_moves(self):
         self._valid_actions = {
@@ -246,6 +278,8 @@ class ForagingEnv(Env):
     def spawn_players(self, max_player_level):
 
         for player in self.players:
+            if not player.active:
+                continue
 
             attempts = 0
             player.reward = 0
@@ -341,6 +375,11 @@ class ForagingEnv(Env):
                 obs[3 * i] = y
                 obs[3 * i + 1] = x
                 obs[3 * i + 2] = observation.field[y, x]
+
+            for i in range(len(self.players)):
+                obs[self.max_food * 3 + 3 * i] = -1
+                obs[self.max_food * 3 + 3 * i + 1] = -1
+                obs[self.max_food * 3 + 3 * i + 2] = 0
 
             for i, p in enumerate(observation.players):
                 obs[self.max_food * 3 + 3 * i] = p.position[0]
