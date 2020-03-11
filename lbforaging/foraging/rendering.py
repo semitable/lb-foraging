@@ -190,7 +190,9 @@ class Viewer(object):
         players = []
         batch = pyglet.graphics.Batch()
 
-        for player in env.players:
+        active_players = [p for p in env.players if p.active]
+
+        for player in active_players:
             row, col = player.position
             players.append(
                 pyglet.sprite.Sprite(
@@ -203,7 +205,7 @@ class Viewer(object):
         for p in players:
             p.update(scale=self.grid_size / p.width)
         batch.draw()
-        for p in env.players:
+        for p in active_players:
             self._draw_badge(*p.position, p.level)
 
     def _draw_badge(self, row, col, level):

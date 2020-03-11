@@ -81,6 +81,7 @@ class ForagingEnv(Env):
         self.logger = logging.getLogger(__name__)
         self.seed()
         self.players = [Player() for _ in range(players)]
+        self.players[0].active = True
 
         self.field = np.zeros(field_size, np.int32)
 
@@ -105,7 +106,7 @@ class ForagingEnv(Env):
 
     @property
     def observation_space(self):
-        return [gym.spaces.Discrete(6)] * len([p for p in self.players if p.active])
+        return [self._get_observation_space()] * len([p for p in self.players if p.active])
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -166,10 +167,17 @@ class ForagingEnv(Env):
     def game_over(self):
         return self._game_over
 
-    def add_agent(id):
+    @property
+    def active_players(self):
+        return [p for p in self.players if p.active]
+
+    def add_agent(self, id):
         if self.players[id].active:
             self.logger.warning("Agent already active.")
             return
+            
+        attempts = 0
+        player = self.players[id]
 
         while attempts < 1000:
             row = self.np_random.randint(0, self.rows - 1)
@@ -177,23 +185,27 @@ class ForagingEnv(Env):
             if self._is_empty_location(row, col):
                 player.setup(
                     (row, col),
-                    self.np_random.randint(1, max_player_level),
+                    self.np_random.randint(1, self.max_player_level),
                     self.field_size,
                 )
                 self.players[id].active = True
                 break
             attempts += 1
+        self._gen_valid_moves()
 
-    def remove_agent(id):
+
+    def remove_agent(self, id):
         self.players[id].active = False
         self.players[id].position = (-1, -1)
+        self._gen_valid_moves()
+
 
     def _gen_valid_moves(self):
         self._valid_actions = {
             player: [
                 action for action in Action if self._is_valid_action(player, action)
             ]
-            for player in self.players
+            for player in self.active_players
         }
 
     def neighborhood(self, row, col, distance=1, ignore_diag=False):
@@ -231,9 +243,10 @@ class ForagingEnv(Env):
             return row, col + 1
 
     def adjacent_players(self, row, col):
+        
         return [
             player
-            for player in self.players
+            for player in self.active_players
             if abs(player.position[0] - row) == 1
             and player.position[1] == col
             or abs(player.position[1] - col) == 1
@@ -350,7 +363,7 @@ class ForagingEnv(Env):
                     reward=a.reward if a == player else None,
                 )
                 for a in self.players
-                if (
+                if a.active and (
                     min(
                         self._transform_to_neighborhood(
                             player.position, self.sight, a.position
@@ -366,7 +379,6 @@ class ForagingEnv(Env):
                     )
                 )
                 <= 2 * self.sight
-                and a.active
             ],
             # todo also check max?
             field=np.copy(self.neighborhood(*player.position, self.sight)),
@@ -418,19 +430,23 @@ class ForagingEnv(Env):
         ninfo = [{} for obs in observations]
 
         # todo this?:
-        return list(zip(observations, nobs)), nreward, ndone, ninfo
+        return nobs, nreward, ndone, ninfo
+        # use this line to enable heuristic agents:
+        # return list(zip(observations, nobs)), nreward, ndone, ninfo
 
     def reset(self):
+
+
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.max_player_level)
         self.spawn_food(
-            self.max_food, max_level=sum([player.level for player in self.players])
+            self.max_food, max_level=sum([player.level for player in self.active_players])
         )
         self.current_step = 0
         self._game_over = False
         self._gen_valid_moves()
 
-        observations = [self._make_obs(player) for player in self.players]
+        observations = [self._make_obs(player) for player in self.active_players]
         nobs, nreward, ndone, ninfo = self._make_gym_obs(observations)
         return nobs
 
@@ -439,21 +455,12 @@ class ForagingEnv(Env):
 
         for p in self.players:
             p.reward = 0
+        
 
         actions = [
             Action(a) if Action(a) in self._valid_actions[p] else Action.NONE
-            for p, a in zip(self.players, actions)
+            for p, a in zip(self.active_players, actions)
         ]
-
-        # check if actions are valid
-        for i, (player, action) in enumerate(zip(self.players, actions)):
-            if action not in self._valid_actions[player]:
-                self.logger.info(
-                    "{}{} attempted invalid action {}.".format(
-                        player.name, player.position, action
-                    )
-                )
-                actions[i] = Action.NONE
 
         loading_players = set()
 
@@ -462,7 +469,7 @@ class ForagingEnv(Env):
         collisions = defaultdict(list)
 
         # so check for collisions
-        for player, action in zip(self.players, actions):
+        for player, action in zip(self.active_players, actions):
             if action == Action.NONE:
                 collisions[player.position].append(player)
             elif action == Action.NORTH:
@@ -519,10 +526,10 @@ class ForagingEnv(Env):
         )
         self._gen_valid_moves()
 
-        for p in self.players:
+        for p in self.active_players:
             p.score += p.reward
 
-        observations = [self._make_obs(player) for player in self.players]
+        observations = [self._make_obs(player) for player in self.active_players]
         return self._make_gym_obs(observations)
 
     def _init_render(self):

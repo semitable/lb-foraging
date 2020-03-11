@@ -8,7 +8,7 @@ coop = [True, False]
 
 for s, f, c in product(sizes, foods, coop):
     register(
-        id="Foraging-{0}x{0}-{2}f{3}-v0".format(s, p, f, "-coop" if c else ""),
+        id="Foraging-{0}x{0}-{1}f{2}-v0".format(s, f, "-coop" if c else ""),
         entry_point="lbforaging.foraging:ForagingEnv",
         kwargs={
             "players": 20,

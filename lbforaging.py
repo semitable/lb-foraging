@@ -63,4 +63,23 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
-    main(args.times, args.render)
+    # main(args.times, args.render)
+    import time
+    import random
+
+    env = gym.make("Foraging-8x8-3f-v0")
+    env.add_agent(0)
+    obs = env.reset()
+
+    for _ in range(50):
+        env.render()
+        time.sleep(0.5)
+        obs, rew, done, info = env.step([asp.sample() for asp in env.action_space])
+        if random.random()< 0.1:
+            env.add_agent(3)
+        if random.random()< 0.2:
+            env.remove_agent(3)
+
+        print(obs)
+        print(rew)
+        print(done)
