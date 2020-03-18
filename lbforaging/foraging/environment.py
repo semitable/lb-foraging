@@ -102,11 +102,11 @@ class ForagingEnv(Env):
 
     @property
     def action_space(self):
-        return [gym.spaces.Discrete(6)] * len([p for p in self.players if p.active])
+        return [gym.spaces.Discrete(6)] * len([p for p in self.players])
 
     @property
     def observation_space(self):
-        return [self._get_observation_space()] * len([p for p in self.players if p.active])
+        return [self._get_observation_space()] * len([p for p in self.players])
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -124,12 +124,12 @@ class ForagingEnv(Env):
         max_food = self.max_food
         max_food_level = self.max_player_level * len(self.players)
 
-        min_obs = [-1, -1, 0] * max_food + [0, 0, 1] * len(self.players)
+        min_obs = [-1, -1, 0] * max_food + [0, 0, 1] * len(self.players) + [0]
         max_obs = [field_x, field_y, max_food_level] * max_food + [
             field_x,
             field_y,
             self.max_player_level,
-        ] * len(self.players)
+        ] * len(self.players) + [1]
 
         return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.int32)
 
@@ -350,6 +350,8 @@ class ForagingEnv(Env):
         return list(product(*[self._valid_actions[player] for player in self.players]))
 
     def _make_obs(self, player):
+        if not player.active:
+            return None
         return self.Observation(
             actions=self._valid_actions[player],
             players=[
@@ -390,6 +392,8 @@ class ForagingEnv(Env):
     def _make_gym_obs(self, observations):
         def make_obs_array(observation):
             obs = np.zeros(self.observation_space[0].shape)
+            if observation is None:
+                return obs
             # obs[: observation.field.size] = observation.field.flatten()
             # self player is always first
             seen_players = [p for p in observation.players if p.is_self] + [
@@ -415,17 +419,19 @@ class ForagingEnv(Env):
                 obs[self.max_food * 3 + 3 * i] = p.position[0]
                 obs[self.max_food * 3 + 3 * i + 1] = p.position[1]
                 obs[self.max_food * 3 + 3 * i + 2] = p.level
-
+            obs[-1] = 1.0
             return obs
 
         def get_player_reward(observation):
+            if observation is None:
+                return 0.0
             for p in observation.players:
                 if p.is_self:
                     return p.reward
 
         nobs = [make_obs_array(obs) for obs in observations]
         nreward = [get_player_reward(obs) for obs in observations]
-        ndone = [obs.game_over for obs in observations]
+        ndone = [obs.game_over if obs else False for obs in observations]
         # ninfo = [{'observation': obs} for obs in observations]
         ninfo = [{} for obs in observations]
 
@@ -446,7 +452,7 @@ class ForagingEnv(Env):
         self._game_over = False
         self._gen_valid_moves()
 
-        observations = [self._make_obs(player) for player in self.active_players]
+        observations = [self._make_obs(player) for player in self.players]
         nobs, nreward, ndone, ninfo = self._make_gym_obs(observations)
         return nobs
 
@@ -459,7 +465,7 @@ class ForagingEnv(Env):
 
         actions = [
             Action(a) if Action(a) in self._valid_actions[p] else Action.NONE
-            for p, a in zip(self.active_players, actions)
+            for p, a in zip(self.players, actions) if p.active
         ]
 
         loading_players = set()
@@ -529,7 +535,7 @@ class ForagingEnv(Env):
         for p in self.active_players:
             p.score += p.reward
 
-        observations = [self._make_obs(player) for player in self.active_players]
+        observations = [self._make_obs(player) for player in self.players]
         return self._make_gym_obs(observations)
 
     def _init_render(self):
