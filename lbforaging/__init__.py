@@ -3,7 +3,7 @@ from itertools import product
 
 sizes = range(5, 11)
 players = range(2, 5)
-foods = range(1, 5)
+foods = range(1, 10)
 coop = [True, False]
 
 for s, p, f, c in product(sizes, players, foods, coop):
