@@ -1,7 +1,7 @@
 from gym.envs.registration import registry, register, make, spec
 from itertools import product
 
-sizes = range(5, 11)
+sizes = range(5, 20)
 players = range(2, 5)
 foods = range(1, 10)
 coop = [True, False]

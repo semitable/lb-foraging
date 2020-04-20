@@ -121,7 +121,7 @@ class ForagingEnv(Env):
             self.max_player_level,
         ] * len(self.players)
 
-        return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.int32)
+        return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
 
     @classmethod
     def from_obs(cls, obs):
