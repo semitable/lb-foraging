@@ -330,7 +330,7 @@ class ForagingEnv(Env):
                         player.position, self.sight, a.position
                     )
                 )
-                <= 2*self.sight
+                <= 2 * self.sight
             ],
             # todo also check max?
             field=np.copy(self.neighborhood(*player.position, self.sight)),
@@ -344,8 +344,10 @@ class ForagingEnv(Env):
             obs = np.zeros(self.observation_space[0].shape)
             # obs[: observation.field.size] = observation.field.flatten()
             # self player is always first
-            seen_players = [p for p in observation.players if p.is_self] + [p for p in observation.players if not p.is_self]
-            
+            seen_players = [p for p in observation.players if p.is_self] + [
+                p for p in observation.players if not p.is_self
+            ]
+
             for i in range(self.max_food):
                 obs[3 * i] = -1
                 obs[3 * i + 1] = -1
@@ -496,4 +498,5 @@ class ForagingEnv(Env):
         if not self._rendering_initialized:
             self._init_render()
 
-        self.viewer.render(self)
+        return self.viewer.render(self, return_rgb_array=mode == "rgb_array")
+
