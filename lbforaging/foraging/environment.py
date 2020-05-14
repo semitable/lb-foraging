@@ -500,3 +500,6 @@ class ForagingEnv(Env):
 
         return self.viewer.render(self, return_rgb_array=mode == "rgb_array")
 
+    def close(self):
+        if self.viewer:
+            self.viewer.close()
