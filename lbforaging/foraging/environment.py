@@ -98,6 +98,8 @@ class ForagingEnv(Env):
 
         self._normalize_reward = normalize_reward
 
+        self.viewer = None
+
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
         return [seed]
