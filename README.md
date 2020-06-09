@@ -1,32 +1,5 @@
-<!-- PROJECT SHIELDS -->
-[![Build Status][build-shield]]()
-[![Contributors][contributors-shield]]()
-
-
-
-<!-- PROJECT LOGO -->
-<br />
-<p align="center">
-  <a href="https://github.com/semitable/lb-foraging">
-    <img src="logo.png" alt="Logo" width="80" height="80">
-  </a>
-
-  <h3 align="center">Level-Based Foraging Environment</h3>
-
-  <p align="center">
-    A multi-agent environment, based on OpenAI's Gym framework.
-    <br />
-    <a href=""><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="">View Demo</a>
-    ·
-    <a href="https://github.com/semitable/lb-foraging/issues">Report Bug</a>
-    ·
-    <a href="https://github.com/semitable/lb-foraging/issues">Request Feature</a>
-  </p>
-</p>
-
+# Level-Based Foraging Environment
+## A multi-agent environment for Reinforcement Learning
 
 
 <!-- TABLE OF CONTENTS -->
@@ -41,20 +14,16 @@
 * [Contributing](#contributing)
 * [License](#license)
 * [Contact](#contact)
-* [Acknowledgements](#acknowledgements)
 
 
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://github.com/semitable/lb-foraging)
-
 This environment is a mixed cooperative-competitive game, which focuses on the coordination of the agents involved. Agents navigate a grid world and collect food by cooperating with other agents if needed.
 
 More specifically, agents are placed in the grid world, and each is assigned a level. Food is also randomly scattered, each having a level on its own. Agents can navigate the environment and can attempt to collect food placed next to them. The collection of food is successful only if the sum of the levels of the agents involved in loading is equal to or higher than the level of the food. Finally, agents are awarded points equal to the level of the food they helped collect, divided by their contribution (their level). The figures below show two states of the game, one that requires cooperation, and one more competitive.
 
-{ADD FIGURES}
 
 While it may appear simple, this is a very challenging environment, requiring the cooperation of multiple agents while being competitive at the same time. In addition, the discount factor also necessitates speed for the maximisation of rewards. Each agent is only awarded points if it participates in the collection of food, and it has to balance between collecting low-levelled food on his own or cooperating in acquiring higher rewards. In situations with three or more agents, highly strategic decisions can be required, involving agents needing to choose with whom to cooperate. Another significant difficulty for RL algorithms is the sparsity of rewards, which causes slower learning.
 
@@ -150,14 +119,6 @@ Contributions are what make the open source community such an amazing place to b
 4. Push to the Branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
-
-<!-- LICENSE -->
-## License
-
-Not yet available
-
-
-
 <!-- CONTACT -->
 ## Contact
 
@@ -165,8 +126,3 @@ Filippos Christianos - f.christianos@ed.ac.uk
 
 Project Link: [https://github.com/semitable/lb-foraging](https://github.com/semitable/lb-foraging)
 
-
-
-<!-- ACKNOWLEDGEMENTS -->
-## Acknowledgements
----
