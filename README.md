@@ -48,6 +48,13 @@ This section should list any major frameworks that you built your project using.
 ```sh
 pip install lbforaging
 ```
+Or to ensure that you have the latest version:
+```sh
+git clone https://github.com/semitable/lb-foraging.git
+cd lb-foraging
+pip install -e .
+```
+
 
 <!-- USAGE EXAMPLES -->
 ## Usage
