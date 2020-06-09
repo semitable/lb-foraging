@@ -44,7 +44,7 @@ This section should list any major frameworks that you built your project using.
 
 ### Installation
 
-1. Install using pip
+Install using pip
 ```sh
 pip install lbforaging
 ```
