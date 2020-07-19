@@ -343,7 +343,7 @@ class ForagingEnv(Env):
 
     def _make_gym_obs(self, observations):
         def make_obs_array(observation):
-            obs = np.zeros(self.observation_space[0].shape)
+            obs = np.zeros(self.observation_space[0].shape, dtype=np.float32)
             # obs[: observation.field.size] = observation.field.flatten()
             # self player is always first
             seen_players = [p for p in observation.players if p.is_self] + [
