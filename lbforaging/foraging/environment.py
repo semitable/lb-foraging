@@ -89,8 +89,8 @@ class ForagingEnv(Env):
         self.force_coop = force_coop
         self._game_over = None
 
-        self.action_space = [gym.spaces.Discrete(6)] * len(self.players)
-        self.observation_space = [self._get_observation_space()] * len(self.players)
+        self.action_space = gym.spaces.Tuple(tuple([gym.spaces.Discrete(6)] * len(self.players)))
+        self.observation_space = gym.spaces.Tuple(tuple([self._get_observation_space()] * len(self.players)))
 
         self._rendering_initialized = False
         self._valid_actions = None
@@ -99,6 +99,8 @@ class ForagingEnv(Env):
         self._normalize_reward = normalize_reward
 
         self.viewer = None
+
+        self.n_agents = len(self.players)
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -377,11 +379,11 @@ class ForagingEnv(Env):
                 if p.is_self:
                     return p.reward
 
-        nobs = [make_obs_array(obs) for obs in observations]
+        nobs = tuple([make_obs_array(obs) for obs in observations])
         nreward = [get_player_reward(obs) for obs in observations]
         ndone = [obs.game_over for obs in observations]
         # ninfo = [{'observation': obs} for obs in observations]
-        ninfo = [{} for obs in observations]
+        ninfo = {}
 
         return nobs, nreward, ndone, ninfo
 
