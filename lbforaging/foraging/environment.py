@@ -390,8 +390,10 @@ class ForagingEnv(Env):
     def reset(self):
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.max_player_level)
+        player_levels = sorted([player.level for player in self.players])
+
         self.spawn_food(
-            self.max_food, max_level=sum([player.level for player in self.players])
+            self.max_food, max_level=sum(player_levels[:3])
         )
         self.current_step = 0
         self._game_over = False
