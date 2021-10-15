@@ -5,14 +5,17 @@
 <!-- TABLE OF CONTENTS -->
 ## Table of Contents
 
-* [About the Project](#about-the-project)
-  * [Built With](#built-with)
-* [Getting Started](#getting-started)
-  * [Installation](#installation)
-* [Usage](#usage)
-* [Citation](#citation)
-* [Contributing](#contributing)
-* [Contact](#contact)
+- [Level-Based Foraging Environment](#level-based-foraging-environment)
+  - [A multi-agent environment for Reinforcement Learning](#a-multi-agent-environment-for-reinforcement-learning)
+  - [Table of Contents](#table-of-contents)
+  - [About The Project](#about-the-project)
+    - [Built With](#built-with)
+  - [Getting Started](#getting-started)
+    - [Installation](#installation)
+  - [Usage](#usage)
+  - [Citation](#citation)
+  - [Contributing](#contributing)
+  - [Contact](#contact)
 
 
 
@@ -66,7 +69,7 @@ import lbforaging
 
 Then create an environment:
 ```python
-env = gym.make("Foraging-8x8-2p-1f-v0")
+env = gym.make("Foraging-8x8-2p-1f-v2")
 ```
 
 We offer a variety of environments using this template:
@@ -79,7 +82,7 @@ But you can register your own variation using (change parameters as needed):
 from gym.envs.registration register
 
 register(
-    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v0".format(s, p, f, "-coop" if c else ""),
+    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v2".format(s, p, f, "-coop" if c else ""),
     entry_point="lbforaging.foraging:ForagingEnv",
     kwargs={
         "players": p,

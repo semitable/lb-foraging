@@ -258,8 +258,8 @@ class ForagingEnv(Env):
             player.reward = 0
 
             while attempts < 1000:
-                row = self.np_random.randint(0, self.rows - 1)
-                col = self.np_random.randint(0, self.cols - 1)
+                row = self.np_random.randint(0, self.rows)
+                col = self.np_random.randint(0, self.cols)
                 if self._is_empty_location(row, col):
                     player.setup(
                         (row, col),
