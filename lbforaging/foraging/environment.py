@@ -17,6 +17,14 @@ class Action(Enum):
     LOAD = 5
 
 
+class CellEntity(Enum):
+    # entity encodings for grid observations
+    OUT_OF_BOUNDS = 0
+    EMPTY = 1
+    FOOD = 2
+    AGENT = 3
+
+
 class Player:
     def __init__(self):
         self.controller = None
@@ -75,6 +83,7 @@ class ForagingEnv(Env):
         max_episode_steps,
         force_coop,
         normalize_reward=True,
+        grid_observation=False,
     ):
         self.logger = logging.getLogger(__name__)
         self.seed()
@@ -89,14 +98,15 @@ class ForagingEnv(Env):
         self.force_coop = force_coop
         self._game_over = None
 
-        self.action_space = gym.spaces.Tuple(tuple([gym.spaces.Discrete(6)] * len(self.players)))
-        self.observation_space = gym.spaces.Tuple(tuple([self._get_observation_space()] * len(self.players)))
-
         self._rendering_initialized = False
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
 
         self._normalize_reward = normalize_reward
+        self._grid_observation = grid_observation
+
+        self.action_space = gym.spaces.Tuple(tuple([gym.spaces.Discrete(6)] * len(self.players)))
+        self.observation_space = gym.spaces.Tuple(tuple([self._get_observation_space()] * len(self.players)))
 
         self.viewer = None
 
@@ -111,25 +121,37 @@ class ForagingEnv(Env):
         - all of the board (board_size^2) with foods
         - player description (x, y, level)*player_count
         """
-        field_x = self.field.shape[1]
-        field_y = self.field.shape[0]
-        # field_size = field_x * field_y
+        if not self._grid_observation:
+            field_x = self.field.shape[1]
+            field_y = self.field.shape[0]
+            # field_size = field_x * field_y
 
-        max_food = self.max_food
-        max_food_level = self.max_player_level * len(self.players)
+            max_food = self.max_food
+            max_food_level = self.max_player_level * len(self.players)
 
-        min_obs = [-1, -1, 0] * max_food + [0, 0, 1] * len(self.players)
-        max_obs = [field_x, field_y, max_food_level] * max_food + [
-            field_x,
-            field_y,
-            self.max_player_level,
-        ] * len(self.players)
+            min_obs = [-1, -1, 0] * max_food + [0, 0, 1] * len(self.players)
+            max_obs = [field_x, field_y, max_food_level] * max_food + [
+                field_x,
+                field_y,
+                self.max_player_level,
+            ] * len(self.players)
+        else:
+            # grid observation space
+            cells_square = (1 + 2 * self.sight)
+
+            min_entity = min([e.value for e in CellEntity])
+            max_entity = max([e.value for e in CellEntity])
+            max_food_level = self.max_player_level * len(self.players)
+            max_level = max([max_food_level, self.max_player_level])
+
+            # each cell: one-hot encoding of entity + level
+            min_obs = [[min_entity, min_entity, min_entity, min_entity, 0] * cells_square] * cells_square
+            max_obs = [[max_entity, max_entity, max_entity, max_entity, max_level] * cells_square] * cells_square
 
         return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
 
     @classmethod
     def from_obs(cls, obs):
-
         players = []
         for p in obs.players:
             player = Player()
@@ -214,7 +236,6 @@ class ForagingEnv(Env):
         ]
 
     def spawn_food(self, max_food, max_level):
-
         food_count = 0
         attempts = 0
         min_level = max_level if self.force_coop else 1
@@ -241,7 +262,6 @@ class ForagingEnv(Env):
         self._food_spawned = self.field.sum()
 
     def _is_empty_location(self, row, col):
-
         if self.field[row, col] != 0:
             return False
         for a in self.players:
@@ -251,7 +271,6 @@ class ForagingEnv(Env):
         return True
 
     def spawn_players(self, max_player_level):
-
         for player in self.players:
 
             attempts = 0
@@ -343,7 +362,7 @@ class ForagingEnv(Env):
             current_step=self.current_step,
         )
 
-    def _make_gym_obs(self, observations):
+    def _make_gym_obs(self):
         def make_obs_array(observation):
             obs = np.zeros(self.observation_space[0].shape, dtype=np.float32)
             # obs[: observation.field.size] = observation.field.flatten()
@@ -374,12 +393,51 @@ class ForagingEnv(Env):
 
             return obs
 
+        def make_grid_obs_array(agent_idx, agent_position, entity_dict):
+            agent_x, agent_y = agent_position
+            grid_shape = self.observation_space[agent_idx].shape
+
+            obs = np.zeros(grid_shape, dtype=np.float32)
+
+            for rel_x in range(-self.sight, self.sight + 1):
+                for rel_y in range(-self.sight, self.sight + 1):
+                    # absolute location of cell in environment
+                    cell_x = agent_x + rel_x
+                    cell_y = agent_y + rel_y
+                    if cell_x < 0 or cell_x >= self.rows or cell_y < 0 or cell_y >= self.cols:
+                        # cell is OOB
+                        entity = CellEntity.OUT_OF_BOUNDS.value
+                        level = -1
+                    elif (cell_x, cell_y) not in entity_dict:
+                        # cell is empty
+                        entity = CellEntity.EMPTY.value
+                        level = -1
+                    else:
+                        # get entity info
+                        entity, level = entity_dict[(cell_x, cell_y)]
+                    # absolute location of cell in observation
+                    grid_x = self.sight + rel_x
+                    grid_y = self.sight + rel_y
+                    # write entity onehot and level
+                    obs[grid_x, grid_y * 5 + entity] = 1.0
+                    obs[grid_x, grid_y * 5 + 4] = level
+            return obs
+
         def get_player_reward(observation):
             for p in observation.players:
                 if p.is_self:
                     return p.reward
 
-        nobs = tuple([make_obs_array(obs) for obs in observations])
+        observations = [self._make_obs(player) for player in self.players]
+        if self._grid_observation:
+            entity_dict = {player.position: (CellEntity.AGENT.value, player.level) for player in self.players}
+            foods_x, foods_y = self.field.nonzero()
+            for x, y in zip(foods_x, foods_y):
+                food_level = self.field[x, y]
+                entity_dict[(x, y)] = (CellEntity.FOOD.value, food_level)
+            nobs = tuple([make_grid_obs_array(i, self.players[i].position, entity_dict) for i in range(self.n_agents)])
+        else:
+            nobs = tuple([make_obs_array(obs) for obs in observations])
         nreward = [get_player_reward(obs) for obs in observations]
         ndone = [obs.game_over for obs in observations]
         # ninfo = [{'observation': obs} for obs in observations]
@@ -399,8 +457,7 @@ class ForagingEnv(Env):
         self._game_over = False
         self._gen_valid_moves()
 
-        observations = [self._make_obs(player) for player in self.players]
-        nobs, nreward, ndone, ninfo = self._make_gym_obs(observations)
+        nobs, _, _, _ = self._make_gym_obs()
         return nobs
 
     def step(self, actions):
@@ -491,8 +548,7 @@ class ForagingEnv(Env):
         for p in self.players:
             p.score += p.reward
 
-        observations = [self._make_obs(player) for player in self.players]
-        return self._make_gym_obs(observations)
+        return self._make_gym_obs()
 
     def _init_render(self):
         from .rendering import Viewer
