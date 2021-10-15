@@ -137,16 +137,24 @@ class ForagingEnv(Env):
             ] * len(self.players)
         else:
             # grid observation space
-            cells_square = (1 + 2 * self.sight)
+            grid_shape = (1 + 2 * self.sight, 1 + 2 * self.sight)
 
-            min_entity = min([e.value for e in CellEntity])
-            max_entity = max([e.value for e in CellEntity])
+            # agents layer: agent levels
+            agents_min = np.zeros(grid_shape, dtype=np.float32)
+            agents_max = np.ones(grid_shape, dtype=np.float32) * self.max_player_level
+
+            # foods layer: foods level
             max_food_level = self.max_player_level * len(self.players)
-            max_level = max([max_food_level, self.max_player_level])
+            foods_min = np.zeros(grid_shape, dtype=np.float32)
+            foods_max = np.ones(grid_shape, dtype=np.float32) * max_food_level
 
-            # each cell: one-hot encoding of entity + level
-            min_obs = [[min_entity, min_entity, min_entity, min_entity, 0] * cells_square] * cells_square
-            max_obs = [[max_entity, max_entity, max_entity, max_entity, max_level] * cells_square] * cells_square
+            # access layer: i the cell available
+            access_min = np.zeros(grid_shape, dtype=np.float32)
+            access_max = np.ones(grid_shape, dtype=np.float32)
+
+            # total layer
+            min_obs = np.stack([agents_min, foods_min, access_min])
+            max_obs = np.stack([agents_max, foods_max, access_max])
 
         return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
 
@@ -393,36 +401,43 @@ class ForagingEnv(Env):
 
             return obs
 
-        def make_grid_obs_array(agent_idx, agent_position, entity_dict):
-            agent_x, agent_y = agent_position
-            grid_shape = self.observation_space[agent_idx].shape
+        def make_global_grid_arrays():
+            """
+            Create global arrays for grid observation space
+            """
+            grid_shape_x, grid_shape_y = self.field_size
+            grid_shape_x += 2 * self.sight
+            grid_shape_y += 2 * self.sight
+            grid_shape = (grid_shape_x, grid_shape_y)
 
-            obs = np.zeros(grid_shape, dtype=np.float32)
+            agents_layer = np.zeros(grid_shape, dtype=np.float32)
+            for player in self.players:
+                player_x, player_y = player.position
+                agents_layer[player_x + self.sight, player_y + self.sight] = player.level
+            
+            foods_layer = np.zeros(grid_shape, dtype=np.float32)
+            foods_layer[self.sight:-self.sight, self.sight:-self.sight] = self.field.copy()
 
-            for rel_x in range(-self.sight, self.sight + 1):
-                for rel_y in range(-self.sight, self.sight + 1):
-                    # absolute location of cell in environment
-                    cell_x = agent_x + rel_x
-                    cell_y = agent_y + rel_y
-                    if cell_x < 0 or cell_x >= self.rows or cell_y < 0 or cell_y >= self.cols:
-                        # cell is OOB
-                        entity = CellEntity.OUT_OF_BOUNDS.value
-                        level = -1
-                    elif (cell_x, cell_y) not in entity_dict:
-                        # cell is empty
-                        entity = CellEntity.EMPTY.value
-                        level = -1
-                    else:
-                        # get entity info
-                        entity, level = entity_dict[(cell_x, cell_y)]
-                    # absolute location of cell in observation
-                    grid_x = self.sight + rel_x
-                    grid_y = self.sight + rel_y
-                    # write entity onehot and level
-                    obs[grid_x, grid_y * 5 + entity] = 1.0
-                    obs[grid_x, grid_y * 5 + 4] = level
-            return obs
+            access_layer = np.ones(grid_shape, dtype=np.float32)
+            # out of bounds not accessible
+            access_layer[:self.sight, :] = 0.0
+            access_layer[-self.sight:, :] = 0.0
+            access_layer[:, :self.sight] = 0.0
+            access_layer[:, -self.sight:] = 0.0
+            # agent locations are not accessible
+            for player in self.players:
+                player_x, player_y = player.position
+                access_layer[player_x + self.sight, player_y + self.sight] = 0.0
+            # food locations are not accessible
+            foods_x, foods_y = self.field.nonzero()
+            for x, y in zip(foods_x, foods_y):
+                access_layer[x + self.sight, y + self.sight] = 0.0
+            
+            return np.stack([agents_layer, foods_layer, access_layer])
 
+        def get_agent_grid_bounds(agent_x, agent_y):
+            return agent_x, agent_x + 2 * self.sight + 1, agent_y, agent_y + 2 * self.sight + 1
+        
         def get_player_reward(observation):
             for p in observation.players:
                 if p.is_self:
@@ -430,12 +445,9 @@ class ForagingEnv(Env):
 
         observations = [self._make_obs(player) for player in self.players]
         if self._grid_observation:
-            entity_dict = {player.position: (CellEntity.AGENT.value, player.level) for player in self.players}
-            foods_x, foods_y = self.field.nonzero()
-            for x, y in zip(foods_x, foods_y):
-                food_level = self.field[x, y]
-                entity_dict[(x, y)] = (CellEntity.FOOD.value, food_level)
-            nobs = tuple([make_grid_obs_array(i, self.players[i].position, entity_dict) for i in range(self.n_agents)])
+            layers = make_global_grid_arrays()
+            agents_bounds = [get_agent_grid_bounds(*player.position) for player in self.players]
+            nobs = tuple([layers[:, start_x:end_x, start_y:end_y] for start_x, end_x, start_y, end_y in agents_bounds])
         else:
             nobs = tuple([make_obs_array(obs) for obs in observations])
         nreward = [get_player_reward(obs) for obs in observations]
