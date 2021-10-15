@@ -139,16 +139,14 @@ def test_reward_1(simple2p1f):
 
 def test_partial_obs_1(simple2p1f_sight1):
     env = simple2p1f_sight1
-    obs = [env._make_obs(player) for player in env.players]
-    obs, _, _, _ = env._make_gym_obs(obs)
+    obs, _, _, _ = env._make_gym_obs()
 
     assert obs[0][-2] == -1
     assert obs[1][-2] == -1
 
 def test_partial_obs_2(simple2p1f_sight2):
     env = simple2p1f_sight2
-    obs = [env._make_obs(player) for player in env.players]
-    obs, _, _, _ = env._make_gym_obs(obs)
+    obs, _, _, _ = env._make_gym_obs()
 
     assert obs[0][-2] > -1
     assert obs[1][-2] > -1
@@ -160,8 +158,7 @@ def test_partial_obs_2(simple2p1f_sight2):
 
 def test_partial_obs_3(simple2p1f):
     env = simple2p1f
-    obs = [env._make_obs(player) for player in env.players]
-    obs, _, _, _ = env._make_gym_obs(obs)
+    obs, _, _, _ = env._make_gym_obs()
 
     assert obs[0][-2] > -1
     assert obs[1][-2] > -1
