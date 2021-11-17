@@ -279,7 +279,7 @@ class ForagingEnv(Env):
         return True
 
     def spawn_players(self, max_player_level):
-        for player in self.players:
+        for i, player in enumerate(self.players):
 
             attempts = 0
             player.reward = 0
@@ -290,7 +290,7 @@ class ForagingEnv(Env):
                 if self._is_empty_location(row, col):
                     player.setup(
                         (row, col),
-                        self.np_random.randint(1, max_player_level),
+                        int((i % 3) + 1), # self.np_random.randint(1, max_player_level),
                         self.field_size,
                     )
                     break
@@ -397,7 +397,7 @@ class ForagingEnv(Env):
             for i, p in enumerate(seen_players):
                 obs[self.max_food * 3 + 3 * i] = p.position[0]
                 obs[self.max_food * 3 + 3 * i + 1] = p.position[1]
-                obs[self.max_food * 3 + 3 * i + 2] = p.level
+                # obs[self.max_food * 3 + 3 * i + 2] = p.level
 
             return obs
 
