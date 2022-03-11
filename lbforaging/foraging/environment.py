@@ -454,7 +454,12 @@ class ForagingEnv(Env):
         ndone = [obs.game_over for obs in observations]
         # ninfo = [{'observation': obs} for obs in observations]
         ninfo = {}
-
+        
+        # check the space of obs
+        for i, obs in  enumerate(nobs):
+            assert self.observation_space[i].contains(obs), \
+                f"obs space error: obs: {obs}, obs_space: {self.observation_space[i]}"
+        
         return nobs, nreward, ndone, ninfo
 
     def reset(self):
