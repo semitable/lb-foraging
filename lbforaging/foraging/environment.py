@@ -129,7 +129,7 @@ class ForagingEnv(Env):
             max_food = self.max_food
             max_food_level = self.max_player_level * len(self.players)
 
-            min_obs = [-1, -1, 0] * max_food + [0, 0, 1] * len(self.players)
+            min_obs = [-1, -1, 0] * max_food + [-1, -1, 0] * len(self.players)
             max_obs = [field_x, field_y, max_food_level] * max_food + [
                 field_x,
                 field_y,
