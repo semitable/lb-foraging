@@ -129,7 +129,7 @@ class ForagingEnv(Env):
             max_food = self.max_food
             max_food_level = self.max_player_level * len(self.players)
 
-            min_obs = [-1, -1, 0] * max_food + [0, 0, 1] * len(self.players)
+            min_obs = [-1, -1, 0] * max_food + [-1, -1, 0] * len(self.players)
             max_obs = [field_x, field_y, max_food_level] * max_food + [
                 field_x,
                 field_y,
@@ -454,7 +454,12 @@ class ForagingEnv(Env):
         ndone = [obs.game_over for obs in observations]
         # ninfo = [{'observation': obs} for obs in observations]
         ninfo = {}
-
+        
+        # check the space of obs
+        for i, obs in  enumerate(nobs):
+            assert self.observation_space[i].contains(obs), \
+                f"obs space error: obs: {obs}, obs_space: {self.observation_space[i]}"
+        
         return nobs, nreward, ndone, ninfo
 
     def reset(self):
