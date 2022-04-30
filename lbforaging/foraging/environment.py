@@ -84,6 +84,7 @@ class ForagingEnv(Env):
         force_coop,
         normalize_reward=True,
         grid_observation=False,
+        penalty=0.0,
     ):
         self.logger = logging.getLogger(__name__)
         self.seed()
@@ -91,6 +92,8 @@ class ForagingEnv(Env):
 
         self.field = np.zeros(field_size, np.int32)
 
+        self.penalty = penalty
+        
         self.max_food = max_food
         self._food_spawned = 0.0
         self.max_player_level = max_player_level
@@ -545,6 +548,8 @@ class ForagingEnv(Env):
 
             if adj_player_level < food:
                 # failed to load
+                for a in adj_players:
+                    a.reward -= self.penalty
                 continue
 
             # else the food was loaded and each player scores points
