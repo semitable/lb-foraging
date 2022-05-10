@@ -49,6 +49,9 @@ _WHITE = (255, 255, 255)
 _GREEN = (0, 255, 0)
 _RED = (255, 0, 0)
 
+_BACKGROUND_COLOR = _WHITE
+_GRID_COLOR = _BLACK
+
 
 def get_display(spec):
     """Convert a display specification (such as :0) into an actual Display
@@ -110,7 +113,7 @@ class Viewer(object):
         )
 
     def render(self, env, return_rgb_array=False):
-        glClearColor(0, 0, 0, 0)
+        glClearColor(*_WHITE, 0)
         self.window.clear()
         self.window.switch_to()
         self.window.dispatch_events()
@@ -144,7 +147,7 @@ class Viewer(object):
                         self.grid_size * r,
                     ),
                 ),
-                ("c3B", (*_WHITE, *_WHITE)),
+                ("c3B", (*_BLACK, *_BLACK)),
             )
         for c in range(self.cols + 1):
             batch.add(
@@ -160,7 +163,7 @@ class Viewer(object):
                         self.grid_size * self.rows,
                     ),
                 ),
-                ("c3B", (*_WHITE, *_WHITE)),
+                ("c3B", (*_BLACK, *_BLACK)),
             )
         batch.draw()
 
@@ -221,17 +224,19 @@ class Viewer(object):
             y = radius * math.sin(angle) + badge_y
             verts += [x, y]
         circle = pyglet.graphics.vertex_list(resolution, ("v2f", verts))
-        glColor3ub(*_BLACK)
-        circle.draw(GL_POLYGON)
         glColor3ub(*_WHITE)
+        circle.draw(GL_POLYGON)
+        glColor3ub(*_BLACK)
         circle.draw(GL_LINE_LOOP)
         label = pyglet.text.Label(
             str(level),
             font_name="Times New Roman",
             font_size=12,
+            bold=True,
             x=badge_x,
             y=badge_y + 2,
             anchor_x="center",
             anchor_y="center",
+            color=(*_BLACK, 255),
         )
         label.draw()
