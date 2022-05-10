@@ -78,8 +78,8 @@ class Viewer(object):
         self.grid_size = 50
         self.icon_size = 20
 
-        self.width = self.cols * self.grid_size + 1
-        self.height = self.rows * self.grid_size + 1
+        self.width = 1 + self.cols * (self.grid_size + 1)
+        self.height = 1 + self.rows * (self.grid_size + 1)
         self.window = pyglet.window.Window(
             width=self.width, height=self.height, display=display
         )
@@ -133,6 +133,7 @@ class Viewer(object):
 
     def _draw_grid(self):
         batch = pyglet.graphics.Batch()
+        # vertical lines
         for r in range(self.rows + 1):
             batch.add(
                 2,
@@ -141,14 +142,16 @@ class Viewer(object):
                 (
                     "v2f",
                     (
-                        0,
-                        self.grid_size * r,
-                        self.grid_size * self.cols,
-                        self.grid_size * r,
+                        0, # LEFT X
+                        (self.grid_size + 1) * r + 1, # Y
+                        (self.grid_size + 1) * self.cols, # RIGHT X
+                        (self.grid_size + 1) * r + 1, # Y
                     ),
                 ),
                 ("c3B", (*_BLACK, *_BLACK)),
             )
+
+        # horizontal lines
         for c in range(self.cols + 1):
             batch.add(
                 2,
@@ -157,10 +160,10 @@ class Viewer(object):
                 (
                     "v2f",
                     (
-                        self.grid_size * c,
-                        0,
-                        self.grid_size * c,
-                        self.grid_size * self.rows,
+                        (self.grid_size + 1) * c + 1, # X
+                        0, # BOTTOM Y
+                        (self.grid_size + 1) * c + 1, # X
+                        (self.grid_size + 1) * self.rows, # TOP X
                     ),
                 ),
                 ("c3B", (*_BLACK, *_BLACK)),
@@ -177,8 +180,8 @@ class Viewer(object):
             apples.append(
                 pyglet.sprite.Sprite(
                     self.img_apple,
-                    self.grid_size * col,
-                    self.height - self.grid_size * (row + 1),
+                    (self.grid_size + 1) * col,
+                    self.height - (self.grid_size + 1) * (row + 1),
                     batch=batch,
                 )
             )
@@ -198,8 +201,8 @@ class Viewer(object):
             players.append(
                 pyglet.sprite.Sprite(
                     self.img_agent,
-                    self.grid_size * col,
-                    self.height - self.grid_size * (row + 1),
+                    (self.grid_size + 1) * col,
+                    self.height - (self.grid_size + 1) * (row + 1),
                     batch=batch,
                 )
             )
