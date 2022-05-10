@@ -216,8 +216,8 @@ class Viewer(object):
         resolution = 6
         radius = self.grid_size / 5
 
-        badge_x = col * self.grid_size + (3 / 4) * self.grid_size
-        badge_y = self.height - self.grid_size * (row + 1) + (1 / 4) * self.grid_size
+        badge_x = col * (self.grid_size + 1) + (3 / 4) * (self.grid_size + 1)
+        badge_y = self.height - (self.grid_size + 1) * (row + 1) + (1 / 4) * (self.grid_size + 1)
 
         # make a circle
         verts = []
