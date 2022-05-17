@@ -1,5 +1,5 @@
 from . import QAgent
-from foraging import Env
+from gym_env import Env
 import random
 import numpy as np
 from agents import H1, H2, H3, H4

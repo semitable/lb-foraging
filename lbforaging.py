@@ -4,7 +4,7 @@ import random
 import time
 import gym
 import numpy as np
-import lbforaging
+import lbforaging.gym_env
 
 
 logger = logging.getLogger(__name__)

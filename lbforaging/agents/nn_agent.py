@@ -1,6 +1,6 @@
 import random
 
-from foraging import Agent
+from gym_env import Agent
 
 
 class NNAgent(Agent):

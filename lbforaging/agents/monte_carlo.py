@@ -8,7 +8,7 @@ import networkx as nx
 import plotly.graph_objs as go
 from networkx.drawing.nx_pydot import graphviz_layout
 
-from foraging import Agent, Env
+from gym_env import Agent, Env
 
 MCTS_DEPTH = 15
 

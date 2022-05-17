@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 
 from agents import H1
-from lbforaging import Agent, Env
-from lbforaging.environment import Action
+from gym_env import Agent, Env
+from gym_env.environment import Action
 
 _CACHE = None
 
