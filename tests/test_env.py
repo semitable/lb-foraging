@@ -1,7 +1,7 @@
 import pytest
 import numpy as np
-import lbforaging
-from lbforaging.foraging.environment import Action
+import lbforaging.gym_env
+from lbforaging.gym_env.environment import Action
 import gym
 
 

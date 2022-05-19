@@ -1,6 +1,6 @@
 import random
 
-from lbforaging import Agent
+from gym_env import Agent
 
 
 class RandomAgent(Agent):
