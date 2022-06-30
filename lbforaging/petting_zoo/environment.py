@@ -50,7 +50,7 @@ class ForagingEnvLite(ParallelEnv):
 
     metadata = {
         "name": "lbforaging_v2",
-        "render_modes": ["human"],
+        "render_modes": ["human", "rgb_array"],
         "render_fps": 4,
         }
 
@@ -164,9 +164,17 @@ class ForagingEnvLite(ParallelEnv):
             max_obs = np.stack([agents_max, foods_max, access_max])
         return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
 
+    @property
+    def observation_spaces(self):
+        return {agent: self.observation_space(agent) for agent in self.possible_agents}
+
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
         return gym.spaces.Discrete(6)
+
+    @property
+    def action_spaces(self):
+        return {agent: self.action_space(agent) for agent in self.possible_agents}
 
     @property
     def field_size(self):
@@ -336,7 +344,7 @@ class ForagingEnvLite(ParallelEnv):
         # TODO
         return self._valid_actions[agent]
 
-    def reset(self, seed=None):
+    def reset(self, seed=None, return_info=False, options=None):
         if seed is not None:
             self.seed(seed=seed)
         self.field = np.zeros(self.field_size, np.int32)
@@ -350,6 +358,10 @@ class ForagingEnvLite(ParallelEnv):
         self._gen_valid_moves()
 
         observations = {agent: self.observe(agent) for agent in self.agents}
+        if return_info:
+            infos = {agent: {"action_mask": self._action_mask(agent)}
+                     for agent in self.agents}
+            return observations, infos
         return observations
 
     def step(self, actions):
