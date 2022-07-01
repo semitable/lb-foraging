@@ -19,6 +19,7 @@ if "Apple" in sys.version:
 
 try:
     import pyglet
+    pyglet.options["headless"] = True
 except ImportError as e:
     raise ImportError(
         """
