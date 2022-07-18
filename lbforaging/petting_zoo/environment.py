@@ -355,11 +355,15 @@ class ForagingEnvLite(ParallelEnv):
             )
         self.current_step = 0
         self._game_over = False
+        self.terminated = False
+        self.truncated = False
         self._gen_valid_moves()
 
         observations = {agent: self.observe(agent) for agent in self.agents}
         if return_info:
-            infos = {agent: {"action_mask": self._action_mask(agent)}
+            infos = {agent: {"action_mask": self._action_mask(agent),
+                             "terminated": self.terminated,
+                             "truncated": self.truncated,}
                      for agent in self.agents}
             return observations, infos
         return observations
@@ -430,16 +434,18 @@ class ForagingEnvLite(ParallelEnv):
             # and the food is removed
             self.field[frow, fcol] = 0
 
-        # TODO when pettingzoo distinguishes between 'done' and 'out of steps' will need to update
-        self._game_over = (
-            self.field.sum() == 0 or self._max_cycles <= self.current_step
-        )
+        # TODO when pettingzoo distinguishes between 'done' and 'terminated/truncated' will need to update
+        self.terminated = self.field.sum == 0
+        self.truncated = self._max_cycles <= self.current_step
+        self._game_over = self.terminated or self.truncated
         dones = {agent: self._game_over for agent in self.agents}
 
         observations = {agent: self.observe(agent) for agent in self.agents}
 
         self._gen_valid_moves()
-        infos = {agent: {"action_mask": self._action_mask(agent)}
+        infos = {agent: {"action_mask": self._action_mask(agent),
+                         "terminated": self.terminated,
+                         "truncated": self.truncated,}
                  for agent in self.agents}
         self.agents = [agent for agent in self.agents if not dones[agent]]
         return observations, rewards, dones, infos
