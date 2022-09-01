@@ -77,8 +77,9 @@ class ForagingEnv(Env):
         self,
         players,
         max_player_level,
+        max_food_level,
         field_size,
-        max_food,
+        max_num_food,
         sight,
         max_episode_steps,
         force_coop,
@@ -94,7 +95,8 @@ class ForagingEnv(Env):
 
         self.penalty = penalty
         
-        self.max_food = max_food
+        self.max_food_level = max_food_level
+        self.max_num_food = max_num_food
         self._food_spawned = 0.0
         self.max_player_level = max_player_level
         self.sight = sight
@@ -129,11 +131,11 @@ class ForagingEnv(Env):
             field_y = self.field.shape[0]
             # field_size = field_x * field_y
 
-            max_food = self.max_food
-            max_food_level = self.max_player_level * len(self.players)
+            max_num_food = self.max_num_food
+            max_food_level = self.max_food_level if self.max_food_level else self.max_player_level * len(self.players)
 
-            min_obs = [-1, -1, 0] * max_food + [-1, -1, 0] * len(self.players)
-            max_obs = [field_x-1, field_y-1, max_food_level] * max_food + [
+            min_obs = [-1, -1, 0] * max_num_food + [-1, -1, 0] * len(self.players)
+            max_obs = [field_x-1, field_y-1, max_food_level] * max_num_food + [
                 field_x-1,
                 field_y-1,
                 self.max_player_level,
@@ -147,7 +149,7 @@ class ForagingEnv(Env):
             agents_max = np.ones(grid_shape, dtype=np.float32) * self.max_player_level
 
             # foods layer: foods level
-            max_food_level = self.max_player_level * len(self.players)
+            max_food_level = self.max_food_level if self.max_food_level else self.max_player_level * len(self.players)
             foods_min = np.zeros(grid_shape, dtype=np.float32)
             foods_max = np.ones(grid_shape, dtype=np.float32) * max_food_level
 
@@ -246,12 +248,12 @@ class ForagingEnv(Env):
             and player.position[0] == row
         ]
 
-    def spawn_food(self, max_food, max_level):
+    def spawn_food(self, max_num_food, max_level):
         food_count = 0
         attempts = 0
         min_level = max_level if self.force_coop else 1
 
-        while food_count < max_food and attempts < 1000:
+        while food_count < max_num_food and attempts < 1000:
             attempts += 1
             row = self.np_random.randint(1, self.rows - 1)
             col = self.np_random.randint(1, self.cols - 1)
@@ -382,7 +384,7 @@ class ForagingEnv(Env):
                 p for p in observation.players if not p.is_self
             ]
 
-            for i in range(self.max_food):
+            for i in range(self.max_num_food):
                 obs[3 * i] = -1
                 obs[3 * i + 1] = -1
                 obs[3 * i + 2] = 0
@@ -393,14 +395,14 @@ class ForagingEnv(Env):
                 obs[3 * i + 2] = observation.field[y, x]
 
             for i in range(len(self.players)):
-                obs[self.max_food * 3 + 3 * i] = -1
-                obs[self.max_food * 3 + 3 * i + 1] = -1
-                obs[self.max_food * 3 + 3 * i + 2] = 0
+                obs[self.max_num_food * 3 + 3 * i] = -1
+                obs[self.max_num_food * 3 + 3 * i + 1] = -1
+                obs[self.max_num_food * 3 + 3 * i + 2] = 0
 
             for i, p in enumerate(seen_players):
-                obs[self.max_food * 3 + 3 * i] = p.position[0]
-                obs[self.max_food * 3 + 3 * i + 1] = p.position[1]
-                obs[self.max_food * 3 + 3 * i + 2] = p.level
+                obs[self.max_num_food * 3 + 3 * i] = p.position[0]
+                obs[self.max_num_food * 3 + 3 * i + 1] = p.position[1]
+                obs[self.max_num_food * 3 + 3 * i + 2] = p.level
 
             return obs
 
@@ -471,7 +473,8 @@ class ForagingEnv(Env):
         player_levels = sorted([player.level for player in self.players])
 
         self.spawn_food(
-            self.max_food, max_level=sum(player_levels[:3])
+            self.max_num_food,
+            max_level=self.max_food_level if self.max_food_level else sum(player_levels[:3])
         )
         self.current_step = 0
         self._game_over = False
