@@ -70,6 +70,7 @@ class ForagingEnvLite(ParallelEnv):
             normalize_reward=True,
             grid_observation=False,
             penalty=0.0,
+            render_mode="rgb_array"
         ):
         # TODO sight = None, etc
         self.logger = logging.getLogger(__name__)
@@ -116,6 +117,7 @@ class ForagingEnvLite(ParallelEnv):
         self._grid_observation = grid_observation
 
         self.viewer = None
+        self.render_mode = render_mode
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -259,8 +261,8 @@ class ForagingEnvLite(ParallelEnv):
         for food_level in self.specified_food_levels:
             while attempts < 1000:
                 attempts += 1
-                row = self.np_random.randint(1, self.rows - 1)
-                col = self.np_random.randint(1, self.cols - 1)
+                row = self.np_random.integers(1, self.rows - 1)
+                col = self.np_random.integers(1, self.cols - 1)
 
                 # check if it has neighbors:
                 if (
@@ -272,7 +274,7 @@ class ForagingEnvLite(ParallelEnv):
 
                 self.field[row, col] = (food_level 
                                         if food_level is not None 
-                                        else self.np_random.randint(min_level, max_level+1)
+                                        else self.np_random.integers(min_level, max_level+1)
                                         )
                 break
         self._food_spawned = self.field.sum()
@@ -296,7 +298,7 @@ class ForagingEnvLite(ParallelEnv):
         for i, agent in enumerate(self.agents):
             self.pos[agent] = unraveled_indices[i]
             if self.specified_agent_levels[agent] is None:
-                self.agent_levels[agent] = self.np_random.randint(1, max_agent_level + 1)
+                self.agent_levels[agent] = self.np_random.integers(1, max_agent_level + 1)
             else:
                 self.agent_levels[agent] = min(self.specified_agent_levels[agent], max_agent_level)
 
@@ -361,9 +363,7 @@ class ForagingEnvLite(ParallelEnv):
 
         observations = {agent: self.observe(agent) for agent in self.agents}
         if return_info:
-            infos = {agent: {"action_mask": self._action_mask(agent),
-                             "terminated": self.terminated,
-                             "truncated": self.truncated,}
+            infos = {agent: {"action_mask": self._action_mask(agent)}
                      for agent in self.agents}
             return observations, infos
         return observations
@@ -437,6 +437,8 @@ class ForagingEnvLite(ParallelEnv):
         # TODO when pettingzoo distinguishes between 'done' and 'terminated/truncated' will need to update
         self.terminated = self.field.sum == 0
         self.truncated = self._max_cycles <= self.current_step
+        terminated = {agent: self.terminated for agent in self.agents}
+        truncated = {agent: self.truncated for agent in self.agents}
         self._game_over = self.terminated or self.truncated
         dones = {agent: self._game_over for agent in self.agents}
 
@@ -448,7 +450,7 @@ class ForagingEnvLite(ParallelEnv):
                          "truncated": self.truncated,}
                  for agent in self.agents}
         self.agents = [agent for agent in self.agents if not dones[agent]]
-        return observations, rewards, dones, infos
+        return observations, rewards, terminated, truncated, infos
 
     def _get_global_grid_layers(self):
         grid_shape_x, grid_shape_y = self.field_size
@@ -530,11 +532,11 @@ class ForagingEnvLite(ParallelEnv):
         self.viewer = Viewer((self.rows, self.cols))
         self._rendering_initialized = True
 
-    def render(self, mode="human"):
+    def render(self):
         if not self._rendering_initialized:
             self._init_render()
 
-        return self.viewer.render(self, return_rgb_array=mode == "rgb_array")
+        return self.viewer.render(self, return_rgb_array=(self.render_mode=="rgb_array"))
 
     def close(self):
         if self.viewer:

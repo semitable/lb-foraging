@@ -14,7 +14,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    install_requires=["numpy", "gym>=0.22.0", "pyglet", "pettingzoo>=1.17.0"],
+    install_requires=["numpy>=1.23.1", "gym>=0.26.1", "pyglet", "pettingzoo>=1.21.0"],
     extras_require={"test": ["pytest"]},
     include_package_data=True,
 )
