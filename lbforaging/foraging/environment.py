@@ -263,8 +263,8 @@ class ForagingEnv(Env):
                 # spawn food in the center of the map
                 # randomise around center to be able to spawn multiple food
                 rand = attempts // 10
-                row = self.rows // 2 + self.np_random.randint(-rand, rand+1)
-                col = self.cols // 2 + self.np_random.randint(-rand, rand+1)
+                row = max(1, min(self.rows - 2, self.rows // 2 + self.np_random.randint(-rand, rand+1)))
+                col = max(1, min(self.cols - 2, self.cols // 2 + self.np_random.randint(-rand, rand+1)))
 
             # check if it has neighbors:
             if (
@@ -274,6 +274,7 @@ class ForagingEnv(Env):
             ):
                 continue
 
+            
             self.field[row, col] = (
                 min_level
                 if min_level == max_level
@@ -315,8 +316,8 @@ class ForagingEnv(Env):
                     ]
                     for row, col in corners:
                         # add increasing small randomisation after 10+ attempts
-                        row = row + self.np_random.randint(-rand, rand+1)
-                        col = col + self.np_random.randint(-rand, rand+1)
+                        row = max(0, min(self.rows - 1, row + self.np_random.randint(-rand, rand+1)))
+                        col = max(0, min(self.cols - 1, col + self.np_random.randint(-rand, rand+1)))
                         if self._is_empty_location(row, col):
                             # found empty corner
                             break
@@ -504,6 +505,7 @@ class ForagingEnv(Env):
         self.spawn_food(
             self.max_food, max_level=sum(player_levels[:3])
         )
+
         self.current_step = 0
         self._game_over = False
         self._gen_valid_moves()
