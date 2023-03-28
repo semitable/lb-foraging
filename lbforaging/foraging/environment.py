@@ -269,6 +269,8 @@ class ForagingEnv(Env):
             self.field[row, col] = (
                 min_level
                 if min_level == max_level
+                # ! this is excluding food of level `max_level` but is kept for
+                # ! consistency with prior LBF versions
                 else self.np_random.randint(min_level, max_level)
             )
             food_count += 1
@@ -295,7 +297,7 @@ class ForagingEnv(Env):
                 if self._is_empty_location(row, col):
                     player.setup(
                         (row, col),
-                        self.np_random.randint(1, max_player_level),
+                        self.np_random.randint(1, max_player_level + 1),
                         self.field_size,
                     )
                     break
