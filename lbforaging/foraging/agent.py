@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 
 _MAX_INT = 999999
