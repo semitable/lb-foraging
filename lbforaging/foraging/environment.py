@@ -93,7 +93,7 @@ class ForagingEnv(Env):
         self.field = np.zeros(field_size, np.int32)
 
         self.penalty = penalty
-        
+
         self.max_food = max_food
         self._food_spawned = 0.0
         self.max_player_level = max_player_level

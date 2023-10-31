@@ -1,3 +1,4 @@
+'''Basic flow to see if the base install worked over one environment.'''
 import argparse
 import logging
 import time
@@ -53,3 +54,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(args.times, args.render)
+
+    print("Done. NO RUNTIME ERRORS.")
