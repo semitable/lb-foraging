@@ -1,6 +1,5 @@
 import argparse
 import logging
-import random
 import time
 import gym
 import numpy as np
@@ -13,7 +12,7 @@ logger = logging.getLogger(__name__)
 def _game_loop(env, render):
     """
     """
-    obs = env.reset()
+    _, _ = env.reset()
     done = False
 
     if render:
@@ -24,7 +23,7 @@ def _game_loop(env, render):
 
         actions = env.action_space.sample()
 
-        nobs, nreward, ndone, _ = env.step(actions)
+        _, nreward, ndone, _ = env.step(actions)
         if sum(nreward) > 0:
             print(nreward)
 
@@ -38,9 +37,9 @@ def _game_loop(env, render):
 
 def main(game_count=1, render=False):
     env = gym.make("Foraging-8x8-2p-2f-v2")
-    obs = env.reset()
+    env.reset()
 
-    for episode in range(game_count):
+    for _ in range(game_count):
         _game_loop(env, render)
 
 
