@@ -2,9 +2,9 @@ import logging
 from collections import namedtuple, defaultdict
 from enum import Enum
 from itertools import product
-from gym import Env
-import gym
-from gym.utils import seeding
+from gymnasium import Env
+import gymnasium as gym
+from gymnasium.utils import seeding
 import numpy as np
 
 
@@ -179,7 +179,15 @@ class ForagingEnv(Env):
             player.score = p.score if p.score else 0
             players.append(player)
 
-        env = cls(players, None, None, None, None)
+        env = cls(
+            players=players,
+            max_player_level=None,
+            field_size=None,
+            max_food=None,
+            sight=None,
+            max_episode_steps=50,
+            force_coop=False
+        )
         env.field = np.copy(obs.field)
         env.current_step = obs.current_step
         env.sight = obs.sight
@@ -482,13 +490,15 @@ class ForagingEnv(Env):
             assert self.observation_space[i].contains(obs), \
                 f"obs space error: obs: {obs}, obs_space: {self.observation_space[i]}"
         
-        return nobs, nreward, ndone, ninfo
+        truncated_term = False
+        # To turn this into a single agent task, you need to sum the nreward and the ndone
+        return nobs, nreward, ndone, truncated_term, ninfo
 
     def test_make_gym_obs(self):
         ''' Test wrapper to test the current observation in a public manner. '''
         return self._make_gym_obs()
 
-    def reset(self):
+    def reset(self, *, seed=None, options=None):
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
@@ -500,7 +510,7 @@ class ForagingEnv(Env):
         self._game_over = False
         self._gen_valid_moves()
 
-        nobs, _, _, _ = self._make_gym_obs()
+        nobs, _, _, _, _ = self._make_gym_obs()
         # The new gym spec and gym utils require that
         # the new observation and a dictionary with info is returned
         return nobs, {}

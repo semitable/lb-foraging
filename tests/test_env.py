@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 import lbforaging
 from lbforaging.foraging.environment import Action
-import gym
+import gymnasium as gym
 
 
 def manhattan_distance(x,y):
@@ -132,42 +132,42 @@ def test_food_spawning_1():
         assert manhattan_distance(foods[1], foods[2]) > 2
 
 def test_reward_0(simple2p1f):
-    _, rewards, _, _ = simple2p1f.step([5, 5])
+    _, rewards, _, _, _ = simple2p1f.step([5, 5])
     assert rewards[0] == 1.0
     assert rewards[1] == 1.0
 
 def test_reward_1(simple2p1f):
-    _, rewards, _, _ = simple2p1f.step([0, 5])
+    _, rewards, _, _, _ = simple2p1f.step([0, 5])
     assert rewards[0] == 0
     assert rewards[1] == 2.0
 
 def test_partial_obs_1(simple2p1f_sight1):
     env = simple2p1f_sight1
-    obs, _, _, _ = env.test_make_gym_obs()
+    obs, _, _, _, _ = env.test_make_gym_obs()
 
     assert obs[0][-2] == -1
     assert obs[1][-2] == -1
 
 def test_partial_obs_2(simple2p1f_sight2):
     env = simple2p1f_sight2
-    obs, _, _, _ = env.test_make_gym_obs()
+    obs, _, _, _, _ = env.test_make_gym_obs()
 
     assert obs[0][-2] > -1
     assert obs[1][-2] > -1
 
-    obs, _, _, _ = env.step([Action.WEST, Action.NONE])
+    obs, _, _, _, _ = env.step([Action.WEST, Action.NONE])
 
     assert obs[0][-2] == -1
     assert obs[1][-2] == -1
 
 def test_partial_obs_3(simple2p1f):
     env = simple2p1f
-    obs, _, _, _ = env.test_make_gym_obs()
+    obs, _, _, _, _ = env.test_make_gym_obs()
 
     assert obs[0][-2] > -1
     assert obs[1][-2] > -1
 
-    obs, _, _, _ = env.step([Action.WEST, Action.NONE])
+    obs, _, _, _, _ = env.step([Action.WEST, Action.NONE])
 
     assert obs[0][-2] > -1
     assert obs[1][-2] > -1

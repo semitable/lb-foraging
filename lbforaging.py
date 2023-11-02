@@ -2,7 +2,7 @@
 import argparse
 import logging
 import time
-import gym
+import gymnasium as gym
 import numpy as np
 import lbforaging
 
@@ -24,7 +24,7 @@ def _game_loop(env, render):
 
         actions = env.action_space.sample()
 
-        _, nreward, ndone, _ = env.step(actions)
+        _, nreward, ndone, _, _ = env.step(actions)
         if sum(nreward) > 0:
             print(nreward)
 
@@ -38,7 +38,9 @@ def _game_loop(env, render):
 
 def main(game_count=1, render=False):
     env = gym.make("Foraging-8x8-2p-2f-v2")
-    env.reset()
+
+    _, info = env.reset()
+    assert info == {}
 
     for _ in range(game_count):
         _game_loop(env, render)
