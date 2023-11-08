@@ -15,8 +15,10 @@ for s, p, f, mfl, c, po, pen in product(sizes, players, foods, max_food_level, c
         entry_point="lbforaging.foraging:ForagingEnv",
         kwargs={
             "players": p,
+            "min_player_level": 1,
             "max_player_level": 2,
             "field_size": (s, s),
+            "min_food_level": 1,
             "max_food_level": mfl,
             "max_num_food": f,
             "sight": 2 if po else s,
@@ -35,8 +37,10 @@ def grid_registration():
                 entry_point="lbforaging.foraging:ForagingEnv",
                 kwargs={
                     "players": p,
+                    "min_player_level": 1,
                     "max_player_level": 2,
                     "field_size": (s, s),
+                    "min_food_level": 1,
                     "max_food_level": mfl,
                     "max_num_food": f,
                     "sight": sight,

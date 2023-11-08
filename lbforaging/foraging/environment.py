@@ -76,7 +76,9 @@ class ForagingEnv(Env):
     def __init__(
         self,
         players,
+        min_player_level,
         max_player_level,
+        min_food_level,
         max_food_level,
         field_size,
         max_num_food,
@@ -95,10 +97,17 @@ class ForagingEnv(Env):
 
         self.penalty = penalty
         
+        self.min_food_level = min_food_level
         self.max_food_level = max_food_level
+        if self.max_food_level is not None:
+            assert self.min_food_level <= self.max_food_level, "min_food_level must be less than or equal to max_food_level"
         self.max_num_food = max_num_food
         self._food_spawned = 0.0
+
+        self.min_player_level = min_player_level
         self.max_player_level = max_player_level
+        if self.max_player_level is not None:
+            assert self.min_player_level <= self.max_player_level, "min_player_level must be less than or equal to max_player_level"
         self.sight = sight
         self.force_coop = force_coop
         self._game_over = None
@@ -248,10 +257,10 @@ class ForagingEnv(Env):
             and player.position[0] == row
         ]
 
-    def spawn_food(self, max_num_food, max_level):
+    def spawn_food(self, max_num_food, min_level, max_level):
         food_count = 0
         attempts = 0
-        min_level = max_level if self.force_coop else 1
+        min_level = max_level if self.force_coop else min_level
 
         while food_count < max_num_food and attempts < 1000:
             attempts += 1
@@ -269,9 +278,7 @@ class ForagingEnv(Env):
             self.field[row, col] = (
                 min_level
                 if min_level == max_level
-                # ! this is excluding food of level `max_level` but is kept for
-                # ! consistency with prior LBF versions
-                else self.np_random.randint(min_level, max_level)
+                else self.np_random.randint(min_level, max_level + 1)
             )
             food_count += 1
         self._food_spawned = self.field.sum()
@@ -285,7 +292,7 @@ class ForagingEnv(Env):
 
         return True
 
-    def spawn_players(self, max_player_level):
+    def spawn_players(self, min_player_level, max_player_level):
         for player in self.players:
 
             attempts = 0
@@ -297,7 +304,7 @@ class ForagingEnv(Env):
                 if self._is_empty_location(row, col):
                     player.setup(
                         (row, col),
-                        self.np_random.randint(1, max_player_level + 1),
+                        self.np_random.randint(min_player_level, max_player_level + 1),
                         self.field_size,
                     )
                     break
@@ -471,11 +478,12 @@ class ForagingEnv(Env):
 
     def reset(self):
         self.field = np.zeros(self.field_size, np.int32)
-        self.spawn_players(self.max_player_level)
+        self.spawn_players(self.min_player_level, self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
 
         self.spawn_food(
             self.max_num_food,
+            min_level=self.min_food_level,
             max_level=self.max_food_level if self.max_food_level else sum(player_levels[:3])
         )
         self.current_step = 0
