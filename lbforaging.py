@@ -2,8 +2,8 @@
 import argparse
 import logging
 import time
-import gymnasium as gym
 import numpy as np
+import gymnasium as gym
 import lbforaging
 
 
