@@ -1,9 +1,9 @@
+'''Basic flow to see if the base install worked over one environment.'''
 import argparse
 import logging
-import random
 import time
-import gym
 import numpy as np
+import gymnasium as gym
 import lbforaging
 
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def _game_loop(env, render):
     """
     """
-    obs = env.reset()
+    _, _ = env.reset()
     done = False
 
     if render:
@@ -24,7 +24,7 @@ def _game_loop(env, render):
 
         actions = env.action_space.sample()
 
-        nobs, nreward, ndone, _ = env.step(actions)
+        _, nreward, ndone, _, _ = env.step(actions)
         if sum(nreward) > 0:
             print(nreward)
 
@@ -38,9 +38,11 @@ def _game_loop(env, render):
 
 def main(game_count=1, render=False):
     env = gym.make("Foraging-8x8-2p-2f-v2")
-    obs = env.reset()
 
-    for episode in range(game_count):
+    _, info = env.reset()
+    assert info == {}
+
+    for _ in range(game_count):
         _game_loop(env, render)
 
 
@@ -54,3 +56,5 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     main(args.times, args.render)
+
+    print("Done. NO RUNTIME ERRORS.")

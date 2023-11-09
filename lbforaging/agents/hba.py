@@ -1,8 +1,8 @@
-from . import QAgent
-from foraging import Env
+from lbforaging.agents.q_agent import QAgent
+from lbforaging.foraging.environment import ForagingEnv as Env
 import random
 import numpy as np
-from agents import H1, H2, H3, H4
+from lbforaging.agents.heuristic_agent import H1, H2, H3, H4
 from itertools import product
 from collections import defaultdict
 from functools import reduce

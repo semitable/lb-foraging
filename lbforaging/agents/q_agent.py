@@ -4,9 +4,10 @@ from itertools import repeat, product
 import numpy as np
 import pandas as pd
 
-from agents import H1
-from lbforaging import Agent, Env
-from lbforaging.environment import Action
+from lbforaging.agents.heuristic_agent import H1
+from lbforaging.foraging.agent import Agent
+from lbforaging.foraging.environment import Action
+from lbforaging.foraging.environment import ForagingEnv as Env
 
 _CACHE = None
 

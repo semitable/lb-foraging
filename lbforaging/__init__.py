@@ -1,5 +1,6 @@
-from gym.envs.registration import registry, register, make, spec
+from gymnasium.envs.registration import registry, register, make, spec
 from itertools import product
+from lbforaging import foraging
 
 sizes = range(5, 20)
 players = range(2, 20)

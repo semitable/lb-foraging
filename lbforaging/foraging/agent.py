@@ -1,5 +1,4 @@
 import logging
-
 import numpy as np
 
 _MAX_INT = 999999
@@ -30,7 +29,7 @@ class Agent:
         return action
 
     def step(self, obs):
-        raise NotImplemented("You must implement an agent")
+        raise NotImplementedError("You must implement an agent")
 
     def _closest_food(self, obs, max_food_level=None, start=None):
 
