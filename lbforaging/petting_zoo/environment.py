@@ -3,8 +3,8 @@ import logging
 from collections import defaultdict
 from copy import copy
 from enum import Enum
-import gym
-from gym.utils import seeding
+import gymnasium
+from gymnasium.utils import seeding
 import numpy as np
 from pettingzoo import ParallelEnv
 from pettingzoo.utils import wrappers
@@ -70,7 +70,8 @@ class ForagingEnvLite(ParallelEnv):
             normalize_reward=True,
             grid_observation=False,
             penalty=0.0,
-            render_mode="rgb_array"
+            render_mode="rgb_array",
+            render_style="simple",
         ):
         # TODO sight = None, etc
         self.logger = logging.getLogger(__name__)
@@ -118,6 +119,7 @@ class ForagingEnvLite(ParallelEnv):
 
         self.viewer = None
         self.render_mode = render_mode
+        self.render_style = render_style
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -138,9 +140,9 @@ class ForagingEnvLite(ParallelEnv):
             max_food_level = self.max_agent_level * len(self.possible_agents)
 
             min_obs_food = [-1, -1, 0]
-            max_obs_food = [field_x-1, field_y-1, max_food_level]
+            max_obs_food = [field_y-1, field_x-1, max_food_level]
             min_obs_agents = [-1, -1, 0]
-            max_obs_agents = [field_x-1, field_y-1, self.max_agent_level]
+            max_obs_agents = [field_y-1, field_x-1, self.max_agent_level]
 
             min_obs = min_obs_food * max_food + min_obs_agents * len(self.possible_agents)
             max_obs = max_obs_food * max_food + max_obs_agents * len(self.possible_agents)
@@ -164,7 +166,7 @@ class ForagingEnvLite(ParallelEnv):
             # total layer
             min_obs = np.stack([agents_min, foods_min, access_min])
             max_obs = np.stack([agents_max, foods_max, access_max])
-        return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
+        return gymnasium.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
 
     @property
     def observation_spaces(self):
@@ -172,7 +174,7 @@ class ForagingEnvLite(ParallelEnv):
 
     @functools.lru_cache(maxsize=None)
     def action_space(self, agent):
-        return gym.spaces.Discrete(6)
+        return gymnasium.spaces.Discrete(6)
 
     @property
     def action_spaces(self):
@@ -362,11 +364,9 @@ class ForagingEnvLite(ParallelEnv):
         self._gen_valid_moves()
 
         observations = {agent: self.observe(agent) for agent in self.agents}
-        if return_info:
-            infos = {agent: {"action_mask": self._action_mask(agent)}
-                     for agent in self.agents}
-            return observations, infos
-        return observations
+        infos = {agent: {"action_mask": self._action_mask(agent)}
+                 for agent in self.agents}
+        return observations, infos
 
     def step(self, actions):
         self.current_step += 1
@@ -527,16 +527,21 @@ class ForagingEnvLite(ParallelEnv):
         return obs
 
     def _init_render(self):
-        from .rendering import Viewer
-
-        self.viewer = Viewer((self.rows, self.cols))
+        if self.render_style == "full":
+            from .rendering import Viewer
+            self.viewer = Viewer((self.rows, self.cols))
+        elif self.render_style == "simple":
+            from .simple_render import render
+            self.simple_render = render
         self._rendering_initialized = True
 
     def render(self):
         if not self._rendering_initialized:
             self._init_render()
-
-        return self.viewer.render(self, return_rgb_array=(self.render_mode=="rgb_array"))
+        if self.render_style == "full":
+            return self.viewer.render(self, return_rgb_array=(self.render_mode=="rgb_array"))
+        elif self.render_style == "simple":
+            return self.simple_render(self)
 
     def close(self):
         if self.viewer:

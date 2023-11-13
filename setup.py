@@ -13,8 +13,19 @@ setup(
         "Programming Language :: Python :: 3.5",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
-    install_requires=["numpy>=1.23.1", "gym>=0.26.1", "pyglet", "pettingzoo>=1.21.0"],
-    extras_require={"test": ["pytest"]},
+    install_requires=[
+        "numpy>=1.23.1",
+        "gymnasium>=0.26.2",
+        "pettingzoo>=1.23.0",
+        "pillow",
+    ],
+    extras_require={
+        "test": ["pytest"],
+        "full_render": ["pyglet<2"],
+    },
     include_package_data=True,
 )
