@@ -132,8 +132,12 @@ class ForagingEnv(Env):
             self.max_player_level = max_player_level
         else:
             self.max_player_level = [max_player_level] * players
+
         if self.max_player_level is not None:
-            assert self.min_player_level <= self.max_player_level, "min_player_level must be less than or equal to max_player_level"
+            # check if min_player_level is less than max_player_level for each player
+            for i, (min_player_level, max_player_level) in enumerate(zip(self.min_player_level, self.max_player_level)):
+                assert min_player_level <= max_player_level, f"min_player_level must be less than or equal to max_player_level for each player but was {min_player_level} > {max_player_level} for player {i}"
+        
         self.sight = sight
         self.force_coop = force_coop
         self._game_over = None
