@@ -31,7 +31,7 @@ for s, p, f, mfl, c, po, pen in product(sizes, players, foods, max_food_level, c
 
 def grid_registration():
     for s, p, f, mfl, c in product(sizes, players, foods, max_food_level, coop):
-        for sight in [2, s]: #range(1, s + 1):
+        for sight in range(1, s + 1):
             register(
                 id="Foraging-grid{4}-{0}x{0}-{1}p-{2}f{3}{5}-v2".format(s, p, f, "-coop" if c else "", "" if sight == s else f"-{sight}s", "-ind" if mfl else ""),
                 entry_point="lbforaging.foraging:ForagingEnv",
