@@ -3,6 +3,7 @@ from enum import Enum
 from itertools import product
 import logging
 from typing import Iterable
+import operator
 
 from gym import Env
 import gym
@@ -37,13 +38,23 @@ class Player:
         self.reward = 0
         self.history = None
         self.current_step = None
+        self.load_logic = None
 
-    def setup(self, position, level, field_size):
+    def setup(self, position, level, load_logic, field_size):
         self.history = []
         self.position = position
         self.level = level
         self.field_size = field_size
         self.score = 0
+        self.load_logic = self.get_logic_condition(load_logic)
+
+    def get_logic_condition(self,load_logic):
+        if load_logic == 'le':
+            return operator.le
+        if load_logic == 'lt':
+            return operator.lt
+        if load_logic == 'eq':
+            return operator.eq
 
     def set_controller(self, controller):
         self.controller = controller
@@ -80,6 +91,7 @@ class ForagingEnv(Env):
         players,
         min_player_level,
         max_player_level,
+        player_load_logic,
         min_food_level,
         max_food_level,
         field_size,
@@ -137,6 +149,15 @@ class ForagingEnv(Env):
             # check if min_player_level is less than max_player_level for each player
             for i, (min_player_level, max_player_level) in enumerate(zip(self.min_player_level, self.max_player_level)):
                 assert min_player_level <= max_player_level, f"min_player_level must be less than or equal to max_player_level for each player but was {min_player_level} > {max_player_level} for player {i}"
+        
+        if isinstance(player_load_logic, Iterable):
+            assert len(player_load_logic) == players, "player_load_logic must be a scalar or a list of length players"
+            for logic in player_load_logic:
+                assert logic in ('le', 'eq', 'lt'), "invalid input: player_load_logic must be either le (less that or equal), lt (less than) or eq (equal) but recived {0}".format(logic)
+            self.player_load_logic = player_load_logic
+        else:
+            self.player_load_logic = [player_load_logic] * players
+
         
         self.sight = sight
         self.force_coop = force_coop
@@ -205,7 +226,7 @@ class ForagingEnv(Env):
         players = []
         for p in obs.players:
             player = Player()
-            player.setup(p.position, p.level, obs.field.shape)
+            player.setup(p.position, p.level, p.load_logic, obs.field.shape)
             player.score = p.score if p.score else 0
             players.append(player)
 
@@ -320,8 +341,8 @@ class ForagingEnv(Env):
 
         return True
 
-    def spawn_players(self, min_player_levels, max_player_levels):
-        for player, min_player_level, max_player_level in zip(self.players, min_player_levels, max_player_levels):
+    def spawn_players(self, min_player_levels, max_player_levels, player_load_logic):
+        for player, min_player_level, max_player_level, load_logic in zip(self.players, min_player_levels, max_player_levels, player_load_logic):
 
             attempts = 0
             player.reward = 0
@@ -333,6 +354,7 @@ class ForagingEnv(Env):
                     player.setup(
                         (row, col),
                         self.np_random.randint(min_player_level, max_player_level + 1),
+                        load_logic,
                         self.field_size,
                     )
                     break
@@ -506,7 +528,7 @@ class ForagingEnv(Env):
 
     def reset(self):
         self.field = np.zeros(self.field_size, np.int32)
-        self.spawn_players(self.min_player_level, self.max_player_level)
+        self.spawn_players(self.min_player_level, self.max_player_level, self.player_load_logic)
         player_levels = sorted([player.level for player in self.players])
 
         self.spawn_food(
@@ -579,15 +601,17 @@ class ForagingEnv(Env):
             food = self.field[frow, fcol]
 
             adj_players = self.adjacent_players(frow, fcol)
+
+            # choose the adjacent players that are loading and follow same load logic
             adj_players = [
-                p for p in adj_players if p in loading_players or p is player
+                p for p in adj_players if (p in loading_players and p.load_logic == player.load_logic ) or p is player
             ]
 
             adj_player_level = sum([a.level for a in adj_players])
 
             loading_players = loading_players - set(adj_players)
 
-            if adj_player_level < food:
+            if not player.load_logic(food,adj_player_level):
                 # failed to load
                 for a in adj_players:
                     a.reward -= self.penalty
