@@ -89,6 +89,7 @@ class ForagingEnv(Env):
         force_coop,
         normalize_reward=True,
         grid_observation=False,
+        observe_agent_levels=True,
         penalty=0.0,
     ):
         self.logger = logging.getLogger(__name__)
@@ -148,6 +149,7 @@ class ForagingEnv(Env):
 
         self._normalize_reward = normalize_reward
         self._grid_observation = grid_observation
+        self._observe_agent_levels = observe_agent_levels
 
         self.action_space = gym.spaces.Tuple(tuple([gym.spaces.Discrete(6)] * len(self.players)))
         self.observation_space = gym.spaces.Tuple(tuple([self._get_observation_space()] * len(self.players)))
@@ -174,17 +176,24 @@ class ForagingEnv(Env):
 
             max_num_food = self.max_num_food
 
-            min_obs = [-1, -1, 0] * max_num_food + [-1, -1, 0] * len(self.players)
-            max_obs = [field_x-1, field_y-1, max_food_level] * max_num_food + [
-                field_x-1, field_y-1, max(self.max_player_level)
-            ] * len(self.players)
+            if self._observe_agent_levels:
+                min_obs = [-1, -1, 0] * max_num_food + [-1, -1, 0] * len(self.players)
+                max_obs = [field_x-1, field_y-1, max_food_level] * max_num_food + [
+                    field_x-1, field_y-1, max(self.max_player_level)
+                ] * len(self.players)
+            else:
+                min_obs = [-1, -1, 0] * max_num_food + [-1, -1] * len(self.players)
+                max_obs = [field_x-1, field_y-1, max_food_level] * max_num_food + [field_x-1, field_y-1] * len(self.players)
         else:
             # grid observation space
             grid_shape = (1 + 2 * self.sight, 1 + 2 * self.sight)
 
             # agents layer: agent levels
             agents_min = np.zeros(grid_shape, dtype=np.float32)
-            agents_max = np.ones(grid_shape, dtype=np.float32) * max(self.max_player_level)
+            if self._observe_agent_levels:
+                agents_max = np.ones(grid_shape, dtype=np.float32) * max(self.max_player_level)
+            else:
+                agents_max = np.ones(grid_shape, dtype=np.float32)
 
             # foods layer: foods level
             foods_min = np.zeros(grid_shape, dtype=np.float32)
@@ -431,15 +440,18 @@ class ForagingEnv(Env):
                 obs[3 * i + 1] = x
                 obs[3 * i + 2] = observation.field[y, x]
 
+            player_obs_len = 3 if self._observe_agent_levels else 2
             for i in range(len(self.players)):
-                obs[self.max_num_food * 3 + 3 * i] = -1
-                obs[self.max_num_food * 3 + 3 * i + 1] = -1
-                obs[self.max_num_food * 3 + 3 * i + 2] = 0
+                obs[self.max_num_food * 3 + player_obs_len * i] = -1
+                obs[self.max_num_food * 3 + player_obs_len * i + 1] = -1
+                if self._observe_agent_levels:
+                    obs[self.max_num_food * 3 + player_obs_len * i + 2] = 0
 
             for i, p in enumerate(seen_players):
-                obs[self.max_num_food * 3 + 3 * i] = p.position[0]
-                obs[self.max_num_food * 3 + 3 * i + 1] = p.position[1]
-                obs[self.max_num_food * 3 + 3 * i + 2] = p.level
+                obs[self.max_num_food * 3 + player_obs_len * i] = p.position[0]
+                obs[self.max_num_food * 3 + player_obs_len * i + 1] = p.position[1]
+                if self._observe_agent_levels:
+                    obs[self.max_num_food * 3 + player_obs_len * i + 2] = p.level
 
             return obs
 
@@ -455,7 +467,10 @@ class ForagingEnv(Env):
             agents_layer = np.zeros(grid_shape, dtype=np.float32)
             for player in self.players:
                 player_x, player_y = player.position
-                agents_layer[player_x + self.sight, player_y + self.sight] = player.level
+                if self._observe_agent_levels:
+                    agents_layer[player_x + self.sight, player_y + self.sight] = player.level
+                else:
+                    agents_layer[player_x + self.sight, player_y + self.sight] = 1
             
             foods_layer = np.zeros(grid_shape, dtype=np.float32)
             foods_layer[self.sight:-self.sight, self.sight:-self.sight] = self.field.copy()
