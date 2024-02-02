@@ -102,17 +102,17 @@ class ForagingEnv(Env):
 
         if isinstance(min_food_level, Iterable):
             assert len(min_food_level) == max_num_food, "min_food_level must be a scalar or a list of length max_num_food"
-            self.min_food_level = min_food_level
+            self.min_food_level = np.array(min_food_level)
         else:
-            self.min_food_level = [min_food_level] * max_num_food
+            self.min_food_level = np.array([min_food_level] * max_num_food)
         
         if max_food_level is None:
             self.max_food_level = None
         elif isinstance(max_food_level, Iterable):
             assert len(max_food_level) == max_num_food, "max_food_level must be a scalar or a list of length max_num_food"
-            self.max_food_level = max_food_level
+            self.max_food_level = np.array(max_food_level)
         else:
-            self.max_food_level = [max_food_level] * max_num_food
+            self.max_food_level = np.array([max_food_level] * max_num_food)
 
         if self.max_food_level is not None:
             # check if min_food_level is less than max_food_level
@@ -124,15 +124,15 @@ class ForagingEnv(Env):
 
         if isinstance(min_player_level, Iterable):
             assert len(min_player_level) == players, "min_player_level must be a scalar or a list of length players"
-            self.min_player_level = min_player_level
+            self.min_player_level = np.array(min_player_level)
         else:
-            self.min_player_level = [min_player_level] * players
+            self.min_player_level = np.array([min_player_level] * players)
 
         if isinstance(max_player_level, Iterable):
             assert len(max_player_level) == players, "max_player_level must be a scalar or a list of length players"
-            self.max_player_level = max_player_level
+            self.max_player_level = np.array(max_player_level)
         else:
-            self.max_player_level = [max_player_level] * players
+            self.max_player_level = np.array([max_player_level] * players)
 
         if self.max_player_level is not None:
             # check if min_player_level is less than max_player_level for each player
@@ -299,6 +299,11 @@ class ForagingEnv(Env):
         attempts = 0
         min_levels = max_levels if self.force_coop else min_levels
 
+        # permute food levels
+        food_permutation = np.random.permutation(max_num_food)
+        min_levels = min_levels[food_permutation]
+        max_levels = max_levels[food_permutation]
+
         while food_count < max_num_food and attempts < 1000:
             attempts += 1
             row = self.np_random.randint(1, self.rows - 1)
@@ -330,6 +335,10 @@ class ForagingEnv(Env):
         return True
 
     def spawn_players(self, min_player_levels, max_player_levels):
+        # permute player levels
+        player_permutation = np.random.permutation(len(self.players))
+        min_player_levels = min_player_levels[player_permutation]
+        max_player_levels = max_player_levels[player_permutation]
         for player, min_player_level, max_player_level in zip(self.players, min_player_levels, max_player_levels):
 
             attempts = 0
@@ -527,7 +536,7 @@ class ForagingEnv(Env):
         self.spawn_food(
             self.max_num_food,
             min_levels=self.min_food_level,
-            max_levels=self.max_food_level if self.max_food_level else [sum(player_levels[:3])] * self.max_num_food,
+            max_levels=self.max_food_level if self.max_food_level else np.array([sum(player_levels[:3])] * self.max_num_food),
         )
         self.current_step = 0
         self._game_over = False
