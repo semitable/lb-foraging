@@ -536,7 +536,7 @@ class ForagingEnv(Env):
         self.spawn_food(
             self.max_num_food,
             min_levels=self.min_food_level,
-            max_levels=self.max_food_level if self.max_food_level else np.array([sum(player_levels[:3])] * self.max_num_food),
+            max_levels=self.max_food_level if self.max_food_level is not None else np.array([sum(player_levels[:3])] * self.max_num_food),
         )
         self.current_step = 0
         self._game_over = False
