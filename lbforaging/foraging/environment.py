@@ -93,7 +93,10 @@ class ForagingEnv(Env):
         self.field = np.zeros(field_size, np.int32)
 
         self.penalty = penalty
-        
+
+        self.min_fruit_feature = 0
+        self.max_fruit_feature = 0
+
         self.max_food = max_food
         self._food_spawned = 0.0
         self.max_player_level = max_player_level
@@ -108,8 +111,12 @@ class ForagingEnv(Env):
         self._normalize_reward = normalize_reward
         self._grid_observation = grid_observation
 
-        self.action_space = gym.spaces.Tuple(tuple([gym.spaces.Discrete(6)] * len(self.players)))
-        self.observation_space = gym.spaces.Tuple(tuple([self._get_observation_space()] * len(self.players)))
+        self.action_space = gym.spaces.Tuple(
+            tuple([gym.spaces.Discrete(6)] * len(self.players))
+        )
+        self.observation_space = gym.spaces.Tuple(
+            tuple([self._get_observation_space()] * len(self.players))
+        )
 
         self.viewer = None
 
@@ -125,19 +132,28 @@ class ForagingEnv(Env):
         - player description (x, y, level)*player_count
         """
         if not self._grid_observation:
-            field_x = self.field.shape[1]
-            field_y = self.field.shape[0]
-            # field_size = field_x * field_y
-
-            max_food = self.max_food
+            field_x, field_y = self.field.shape
             max_food_level = self.max_player_level * len(self.players)
-
-            min_obs = [-1, -1, 0] * max_food + [-1, -1, 0] * len(self.players)
-            max_obs = [field_x-1, field_y-1, max_food_level] * max_food + [
-                field_x-1,
-                field_y-1,
-                self.max_player_level,
+            min_obs = [-1, -1, self.min_fruit_feature, 0] * self.max_food + [
+                -1,
+                -1,
+                0,
             ] * len(self.players)
+            max_obs = [
+                field_x - 1,
+                field_y - 1,
+                self.max_fruit_feature,
+                max_food_level,
+            ] * self.max_food + [
+                field_x - 1,
+                field_y - 1,
+                self.max_player_level,
+            ] * len(
+                self.players
+            )
+
+            print(f"min_obs: {min_obs}")
+            print(f"max_obs: {max_obs}")
         else:
             # grid observation space
             grid_shape = (1 + 2 * self.sight, 1 + 2 * self.sight)
@@ -378,31 +394,30 @@ class ForagingEnv(Env):
     def _make_gym_obs(self):
         def make_obs_array(observation):
             obs = np.zeros(self.observation_space[0].shape, dtype=np.float32)
-            # obs[: observation.field.size] = observation.field.flatten()
+
             # self player is always first
             seen_players = [p for p in observation.players if p.is_self] + [
                 p for p in observation.players if not p.is_self
             ]
 
-            for i in range(self.max_food):
-                obs[3 * i] = -1
-                obs[3 * i + 1] = -1
-                obs[3 * i + 2] = 0
+            default_fruit_repr = [-1, -1, self.min_fruit_feature, 0]
+            obs[: 4 * self.max_food] = default_fruit_repr * self.max_food
 
             for i, (y, x) in enumerate(zip(*np.nonzero(observation.field))):
-                obs[3 * i] = y
-                obs[3 * i + 1] = x
-                obs[3 * i + 2] = observation.field[y, x]
+                start, end = 4 * i, 4 * (i + 1)
+                obs[start:end] = [
+                    y,
+                    x,
+                    self.min_fruit_feature,
+                    observation.field[y, x],
+                ]
 
-            for i in range(len(self.players)):
-                obs[self.max_food * 3 + 3 * i] = -1
-                obs[self.max_food * 3 + 3 * i + 1] = -1
-                obs[self.max_food * 3 + 3 * i + 2] = 0
+            default_player_repr = [-1, -1, 0]
+            obs[self.max_food * 4 : len(obs)] = default_player_repr * len(self.players)
 
             for i, p in enumerate(seen_players):
-                obs[self.max_food * 3 + 3 * i] = p.position[0]
-                obs[self.max_food * 3 + 3 * i + 1] = p.position[1]
-                obs[self.max_food * 3 + 3 * i + 2] = p.level
+                start, end = self.max_food * 4 + 3 * i, self.max_food * 4 + 3 * (i + 1)
+                obs[start:end] = [p.position[0], p.position[1], p.level]
 
             return obs
 
@@ -418,17 +433,21 @@ class ForagingEnv(Env):
             agents_layer = np.zeros(grid_shape, dtype=np.float32)
             for player in self.players:
                 player_x, player_y = player.position
-                agents_layer[player_x + self.sight, player_y + self.sight] = player.level
-            
+                agents_layer[player_x + self.sight, player_y + self.sight] = (
+                    player.level
+                )
+
             foods_layer = np.zeros(grid_shape, dtype=np.float32)
-            foods_layer[self.sight:-self.sight, self.sight:-self.sight] = self.field.copy()
+            foods_layer[self.sight : -self.sight, self.sight : -self.sight] = (
+                self.field.copy()
+            )
 
             access_layer = np.ones(grid_shape, dtype=np.float32)
             # out of bounds not accessible
-            access_layer[:self.sight, :] = 0.0
-            access_layer[-self.sight:, :] = 0.0
-            access_layer[:, :self.sight] = 0.0
-            access_layer[:, -self.sight:] = 0.0
+            access_layer[: self.sight, :] = 0.0
+            access_layer[-self.sight :, :] = 0.0
+            access_layer[:, : self.sight] = 0.0
+            access_layer[:, -self.sight :] = 0.0
             # agent locations are not accessible
             for player in self.players:
                 player_x, player_y = player.position
@@ -437,12 +456,17 @@ class ForagingEnv(Env):
             foods_x, foods_y = self.field.nonzero()
             for x, y in zip(foods_x, foods_y):
                 access_layer[x + self.sight, y + self.sight] = 0.0
-            
+
             return np.stack([agents_layer, foods_layer, access_layer])
 
         def get_agent_grid_bounds(agent_x, agent_y):
-            return agent_x, agent_x + 2 * self.sight + 1, agent_y, agent_y + 2 * self.sight + 1
-        
+            return (
+                agent_x,
+                agent_x + 2 * self.sight + 1,
+                agent_y,
+                agent_y + 2 * self.sight + 1,
+            )
+
         def get_player_reward(observation):
             for p in observation.players:
                 if p.is_self:
@@ -451,20 +475,28 @@ class ForagingEnv(Env):
         observations = [self._make_obs(player) for player in self.players]
         if self._grid_observation:
             layers = make_global_grid_arrays()
-            agents_bounds = [get_agent_grid_bounds(*player.position) for player in self.players]
-            nobs = tuple([layers[:, start_x:end_x, start_y:end_y] for start_x, end_x, start_y, end_y in agents_bounds])
+            agents_bounds = [
+                get_agent_grid_bounds(*player.position) for player in self.players
+            ]
+            nobs = tuple(
+                [
+                    layers[:, start_x:end_x, start_y:end_y]
+                    for start_x, end_x, start_y, end_y in agents_bounds
+                ]
+            )
         else:
             nobs = tuple([make_obs_array(obs) for obs in observations])
         nreward = [get_player_reward(obs) for obs in observations]
         ndone = [obs.game_over for obs in observations]
         # ninfo = [{'observation': obs} for obs in observations]
         ninfo = {}
-        
+
         # check the space of obs
-        for i, obs in  enumerate(nobs):
-            assert self.observation_space[i].contains(obs), \
-                f"obs space error: obs: {obs}, obs_space: {self.observation_space[i]}"
-        
+        for i, obs in enumerate(nobs):
+            assert self.observation_space[i].contains(
+                obs
+            ), f"obs space error: obs: {obs}, obs_space: {self.observation_space[i]}"
+
         return nobs, nreward, ndone, ninfo
 
     def reset(self):
@@ -472,9 +504,7 @@ class ForagingEnv(Env):
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
 
-        self.spawn_food(
-            self.max_food, max_level=sum(player_levels[:3])
-        )
+        self.spawn_food(self.max_food, max_level=sum(player_levels[:3]))
         self.current_step = 0
         self._game_over = False
         self._gen_valid_moves()
