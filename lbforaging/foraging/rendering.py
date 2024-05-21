@@ -142,10 +142,10 @@ class Viewer(object):
                 (
                     "v2f",
                     (
-                        0, # LEFT X
-                        (self.grid_size + 1) * r + 1, # Y
-                        (self.grid_size + 1) * self.cols, # RIGHT X
-                        (self.grid_size + 1) * r + 1, # Y
+                        0,  # LEFT X
+                        (self.grid_size + 1) * r + 1,  # Y
+                        (self.grid_size + 1) * self.cols,  # RIGHT X
+                        (self.grid_size + 1) * r + 1,  # Y
                     ),
                 ),
                 ("c3B", (*_BLACK, *_BLACK)),
@@ -160,10 +160,10 @@ class Viewer(object):
                 (
                     "v2f",
                     (
-                        (self.grid_size + 1) * c + 1, # X
-                        0, # BOTTOM Y
-                        (self.grid_size + 1) * c + 1, # X
-                        (self.grid_size + 1) * self.rows, # TOP X
+                        (self.grid_size + 1) * c + 1,  # X
+                        0,  # BOTTOM Y
+                        (self.grid_size + 1) * c + 1,  # X
+                        (self.grid_size + 1) * self.rows,  # TOP X
                     ),
                 ),
                 ("c3B", (*_BLACK, *_BLACK)),
@@ -171,7 +171,7 @@ class Viewer(object):
         batch.draw()
 
     def _draw_food(self, env):
-        idxes = list(zip(*env.field.nonzero()))
+        idxes = list(zip(*env.field[:, :, 0].nonzero()))
         apples = []
         batch = pyglet.graphics.Batch()
 
@@ -190,7 +190,7 @@ class Viewer(object):
         batch.draw()
 
         for row, col in idxes:
-            self._draw_badge(row, col, env.field[row, col])
+            self._draw_badge(row, col, env.field[row, col, 0])
 
     def _draw_players(self, env):
         players = []
@@ -217,7 +217,11 @@ class Viewer(object):
         radius = self.grid_size / 5
 
         badge_x = col * (self.grid_size + 1) + (3 / 4) * (self.grid_size + 1)
-        badge_y = self.height - (self.grid_size + 1) * (row + 1) + (1 / 4) * (self.grid_size + 1)
+        badge_y = (
+            self.height
+            - (self.grid_size + 1) * (row + 1)
+            + (1 / 4) * (self.grid_size + 1)
+        )
 
         # make a circle
         verts = []

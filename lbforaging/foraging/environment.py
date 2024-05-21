@@ -30,16 +30,18 @@ class Player:
         self.controller = None
         self.position = None
         self.level = None
+        self.preferences = None
         self.field_size = None
         self.score = None
         self.reward = 0
         self.history = None
         self.current_step = None
 
-    def setup(self, position, level, field_size):
+    def setup(self, position, level, preferences, field_size):
         self.history = []
         self.position = position
         self.level = level
+        self.preferences = preferences
         self.field_size = field_size
         self.score = 0
 
@@ -90,7 +92,7 @@ class ForagingEnv(Env):
         self.seed()
         self.players = [Player() for _ in range(players)]
 
-        self.field = np.zeros(field_size, np.int32)
+        self.field = np.zeros(field_size + (2,), np.int32)
 
         self.penalty = penalty
 
@@ -132,7 +134,7 @@ class ForagingEnv(Env):
         - player description (x, y, level)*player_count
         """
         if not self._grid_observation:
-            field_x, field_y = self.field.shape
+            field_x, field_y, _ = self.field.shape
             max_food_level = self.max_player_level * len(self.players)
             min_obs = [-1, -1, self.min_fruit_feature, 0] * self.max_food + [
                 -1,
@@ -182,7 +184,7 @@ class ForagingEnv(Env):
         players = []
         for p in obs.players:
             player = Player()
-            player.setup(p.position, p.level, obs.field.shape)
+            player.setup(p.position, p.level, np.array([1]), obs.field.shape)
             player.score = p.score if p.score else 0
             players.append(player)
 
@@ -196,7 +198,7 @@ class ForagingEnv(Env):
 
     @property
     def field_size(self):
-        return self.field.shape
+        return self.field.shape[:2]
 
     @property
     def rows(self):
@@ -225,6 +227,7 @@ class ForagingEnv(Env):
                 max(col - distance, 0) : min(col + distance + 1, self.cols),
             ]
 
+        # max note: check this
         return (
             self.field[
                 max(row - distance, 0) : min(row + distance + 1, self.rows), col
@@ -234,22 +237,37 @@ class ForagingEnv(Env):
             ].sum()
         )
 
+    def is_food(self, row, col):
+        return self.food_level(row, col) > 0
+
+    def food_level(self, row, col):
+        return self.field[row, col][0]
+
+    def food_feature(self, row, col):
+        return self.field[row, col][1]
+
+    def food_levels(self):
+        return self.field[:, :, 0]
+
+    def food_features(self):
+        return self.field[:, :, 1]
+
     def adjacent_food(self, row, col):
         return (
-            self.field[max(row - 1, 0), col]
-            + self.field[min(row + 1, self.rows - 1), col]
-            + self.field[row, max(col - 1, 0)]
-            + self.field[row, min(col + 1, self.cols - 1)]
+            self.food_level(max(row - 1, 0), col)
+            + self.food_level(min(row + 1, self.rows - 1), col)
+            + self.food_level(row, max(col - 1, 0))
+            + self.food_level(row, min(col + 1, self.cols - 1))
         )
 
     def adjacent_food_location(self, row, col):
-        if row > 1 and self.field[row - 1, col] > 0:
+        if row > 1 and self.food_level(row - 1, col) > 0:
             return row - 1, col
-        elif row < self.rows - 1 and self.field[row + 1, col] > 0:
+        elif row < self.rows - 1 and self.food_level(row + 1, col) > 0:
             return row + 1, col
-        elif col > 1 and self.field[row, col - 1] > 0:
+        elif col > 1 and self.food_level(row, col - 1) > 0:
             return row, col - 1
-        elif col < self.cols - 1 and self.field[row, col + 1] > 0:
+        elif col < self.cols - 1 and self.food_level(row, col + 1) > 0:
             return row, col + 1
 
     def adjacent_players(self, row, col):
@@ -263,8 +281,7 @@ class ForagingEnv(Env):
         ]
 
     def spawn_food(self, max_food, max_level):
-        food_count = 0
-        attempts = 0
+        food_count, attempts = 0, 0
         min_level = max_level if self.force_coop else 1
 
         while food_count < max_food and attempts < 1000:
@@ -280,18 +297,22 @@ class ForagingEnv(Env):
             ):
                 continue
 
-            self.field[row, col] = (
+            food_level = (
                 min_level
                 if min_level == max_level
                 # ! this is excluding food of level `max_level` but is kept for
                 # ! consistency with prior LBF versions
                 else self.np_random.randint(min_level, max_level)
             )
+            self.field[row, col] = [food_level, 0]
             food_count += 1
-        self._food_spawned = self.field.sum()
+        self._food_spawned = self.field[:, :, 0].sum()
+
+    def remove_food(self, row, col):
+        self.field[row, col] = [0, 0]
 
     def _is_empty_location(self, row, col):
-        if self.field[row, col] != 0:
+        if self.food_level(row, col) > 0:
             return False
         for a in self.players:
             if a.position and row == a.position[0] and col == a.position[1]:
@@ -312,6 +333,7 @@ class ForagingEnv(Env):
                     player.setup(
                         (row, col),
                         self.np_random.randint(1, max_player_level + 1),
+                        np.array([1]),
                         self.field_size,
                     )
                     break
@@ -321,24 +343,20 @@ class ForagingEnv(Env):
         if action == Action.NONE:
             return True
         elif action == Action.NORTH:
-            return (
-                player.position[0] > 0
-                and self.field[player.position[0] - 1, player.position[1]] == 0
+            return player.position[0] > 0 and not self.is_food(
+                player.position[0] - 1, player.position[1]
             )
         elif action == Action.SOUTH:
-            return (
-                player.position[0] < self.rows - 1
-                and self.field[player.position[0] + 1, player.position[1]] == 0
+            return player.position[0] < self.rows - 1 and not self.is_food(
+                player.position[0] + 1, player.position[1]
             )
         elif action == Action.WEST:
-            return (
-                player.position[1] > 0
-                and self.field[player.position[0], player.position[1] - 1] == 0
+            return player.position[1] > 0 and not self.is_food(
+                player.position[0], player.position[1] - 1
             )
         elif action == Action.EAST:
-            return (
-                player.position[1] < self.cols - 1
-                and self.field[player.position[0], player.position[1] + 1] == 0
+            return player.position[1] < self.cols - 1 and not self.is_food(
+                player.position[0], player.position[1] + 1
             )
         elif action == Action.LOAD:
             return self.adjacent_food(*player.position) > 0
@@ -403,13 +421,18 @@ class ForagingEnv(Env):
             default_fruit_repr = [-1, -1, self.min_fruit_feature, 0]
             obs[: 4 * self.max_food] = default_fruit_repr * self.max_food
 
-            for i, (y, x) in enumerate(zip(*np.nonzero(observation.field))):
+            food_levels, food_features = (
+                observation.field[:, :, 0],
+                observation.field[:, :, 1],
+            )
+
+            for i, (y, x) in enumerate(zip(*np.nonzero(food_levels))):
                 start, end = 4 * i, 4 * (i + 1)
                 obs[start:end] = [
                     y,
                     x,
-                    self.min_fruit_feature,
-                    observation.field[y, x],
+                    food_features[y, x],
+                    food_levels[y, x],
                 ]
 
             default_player_repr = [-1, -1, 0]
@@ -421,6 +444,7 @@ class ForagingEnv(Env):
 
             return obs
 
+        # max note: update this
         def make_global_grid_arrays():
             """
             Create global arrays for grid observation space
@@ -500,7 +524,7 @@ class ForagingEnv(Env):
         return nobs, nreward, ndone, ninfo
 
     def reset(self):
-        self.field = np.zeros(self.field_size, np.int32)
+        self.field = np.zeros(self.field_size + (2,), np.int32)
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
 
@@ -522,16 +546,6 @@ class ForagingEnv(Env):
             Action(a) if Action(a) in self._valid_actions[p] else Action.NONE
             for p, a in zip(self.players, actions)
         ]
-
-        # check if actions are valid
-        for i, (player, action) in enumerate(zip(self.players, actions)):
-            if action not in self._valid_actions[player]:
-                self.logger.info(
-                    "{}{} attempted invalid action {}.".format(
-                        player.name, player.position, action
-                    )
-                )
-                actions[i] = Action.NONE
 
         loading_players = set()
 
@@ -567,7 +581,9 @@ class ForagingEnv(Env):
             # find adjacent food
             player = loading_players.pop()
             frow, fcol = self.adjacent_food_location(*player.position)
-            food = self.field[frow, fcol]
+            food_level, food_feature = self.food_level(frow, fcol), self.food_feature(
+                frow, fcol
+            )
 
             adj_players = self.adjacent_players(frow, fcol)
             adj_players = [
@@ -578,7 +594,7 @@ class ForagingEnv(Env):
 
             loading_players = loading_players - set(adj_players)
 
-            if adj_player_level < food:
+            if adj_player_level < food_level:
                 # failed to load
                 for a in adj_players:
                     a.reward -= self.penalty
@@ -586,13 +602,13 @@ class ForagingEnv(Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                a.reward = float(a.level * food)
+                a.reward = float(a.level * food_level * a.preferences[food_feature])
                 if self._normalize_reward:
                     a.reward = a.reward / float(
                         adj_player_level * self._food_spawned
                     )  # normalize reward
             # and the food is removed
-            self.field[frow, fcol] = 0
+            self.remove_food(frow, fcol)
 
         self._game_over = (
             self.field.sum() == 0 or self._max_episode_steps <= self.current_step
