@@ -174,3 +174,5 @@ $RECYCLE.BIN/
 *.lnk
 
 # End of https://www.gitignore.io/api/linux,python,windows,visualstudiocode
+
+**/.DS_Store

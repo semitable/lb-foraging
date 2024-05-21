@@ -96,9 +96,6 @@ class ForagingEnv(Env):
 
         self.penalty = penalty
 
-        self.min_fruit_feature = 0
-        self.max_fruit_feature = 0
-
         self.max_food = max_food
         self._food_spawned = 0.0
         self.max_player_level = max_player_level
@@ -136,7 +133,7 @@ class ForagingEnv(Env):
         if not self._grid_observation:
             field_x, field_y, _ = self.field.shape
             max_food_level = self.max_player_level * len(self.players)
-            min_obs = [-1, -1, self.min_fruit_feature, 0] * self.max_food + [
+            min_obs = [-1, -1, 0, 0] * self.max_food + [
                 -1,
                 -1,
                 0,
@@ -144,7 +141,7 @@ class ForagingEnv(Env):
             max_obs = [
                 field_x - 1,
                 field_y - 1,
-                self.max_fruit_feature,
+                self.max_food,
                 max_food_level,
             ] * self.max_food + [
                 field_x - 1,
@@ -190,6 +187,12 @@ class ForagingEnv(Env):
 
         env = cls(players, None, None, None, None)
         env.field = np.copy(obs.field)
+
+        frows, fcols = env.field[:, :, 0].nonzero()
+        num_foods = len(frows)
+        for p in env.players:
+            p.preferences = np.ones(num_foods)
+
         env.current_step = obs.current_step
         env.sight = obs.sight
         env._gen_valid_moves()
@@ -304,7 +307,7 @@ class ForagingEnv(Env):
                 # ! consistency with prior LBF versions
                 else self.np_random.randint(min_level, max_level)
             )
-            self.field[row, col] = [food_level, 0]
+            self.field[row, col] = [food_level, food_count + 1]
             food_count += 1
         self._food_spawned = self.field[:, :, 0].sum()
 
@@ -333,7 +336,7 @@ class ForagingEnv(Env):
                     player.setup(
                         (row, col),
                         self.np_random.randint(1, max_player_level + 1),
-                        np.array([1]),
+                        np.ones(self.max_food),
                         self.field_size,
                     )
                     break
@@ -418,7 +421,7 @@ class ForagingEnv(Env):
                 p for p in observation.players if not p.is_self
             ]
 
-            default_fruit_repr = [-1, -1, self.min_fruit_feature, 0]
+            default_fruit_repr = [-1, -1, 0, 0]
             obs[: 4 * self.max_food] = default_fruit_repr * self.max_food
 
             food_levels, food_features = (
@@ -602,7 +605,10 @@ class ForagingEnv(Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                a.reward = float(a.level * food_level * a.preferences[food_feature])
+                assert (
+                    len(a.preferences) >= food_feature
+                ), "mismatch between feature and preference dimensions"
+                a.reward = float(a.level * food_level * a.preferences[food_feature - 1])
                 if self._normalize_reward:
                     a.reward = a.reward / float(
                         adj_player_level * self._food_spawned

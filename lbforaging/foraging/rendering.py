@@ -90,12 +90,13 @@ class Viewer(object):
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA)
 
         script_dir = os.path.dirname(__file__)
-
         pyglet.resource.path = [os.path.join(script_dir, "icons")]
         pyglet.resource.reindex()
 
-        self.img_apple = pyglet.resource.image("apple.png")
-        self.img_agent = pyglet.resource.image("agent.png")
+        self.agent_icon = pyglet.resource.image("agent.png")
+        self.food_icons = [
+            pyglet.resource.image(fn) for fn in ["apple.png", "orange.png", "plum.png"]
+        ]
 
     def close(self):
         self.window.close()
@@ -171,22 +172,22 @@ class Viewer(object):
         batch.draw()
 
     def _draw_food(self, env):
-        idxes = list(zip(*env.field[:, :, 0].nonzero()))
-        apples = []
-        batch = pyglet.graphics.Batch()
+        food_levels, food_types = env.field[:, :, 0], env.field[:, :, 1]
+        idxes = list(zip(*food_levels.nonzero()))
+        foods, batch = [], pyglet.graphics.Batch()
 
         # print(env.field)
         for row, col in idxes:
-            apples.append(
+            foods.append(
                 pyglet.sprite.Sprite(
-                    self.img_apple,
+                    self.food_icons[food_types[row, col] - 1],
                     (self.grid_size + 1) * col,
                     self.height - (self.grid_size + 1) * (row + 1),
                     batch=batch,
                 )
             )
-        for a in apples:
-            a.update(scale=self.grid_size / a.width)
+        for f in foods:
+            f.update(scale=self.grid_size / f.width)
         batch.draw()
 
         for row, col in idxes:
@@ -200,7 +201,7 @@ class Viewer(object):
             row, col = player.position
             players.append(
                 pyglet.sprite.Sprite(
-                    self.img_agent,
+                    self.agent_icon,
                     (self.grid_size + 1) * col,
                     self.height - (self.grid_size + 1) * (row + 1),
                     batch=batch,
