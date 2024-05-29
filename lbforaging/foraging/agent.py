@@ -1,4 +1,6 @@
 import logging
+import random
+from typing import Any
 
 import numpy as np
 
@@ -18,33 +20,34 @@ class Agent:
     def __getattr__(self, item):
         return getattr(self.player, item)
 
-    def _step(self, obs):
-        self.observed_position = next(
-            (x for x in obs.players if x.is_self), None
-        ).position
+    def act(self, obs):
+        if hasattr(obs, "players"):
+            self.observed_position = next(
+                (x for x in obs.players if x.is_self), None
+            ).position
 
-        # saves the action to the history
-        action = self.step(obs)
+        try:
+            action = self._act(obs)
+        except Exception as e:
+            # self.logger.error(f"Error in agent {self.name} act method: {e}")
+            action = random.choice(obs.actions)
+
         self.history.append(action)
-
         return action
 
-    def step(self, obs):
+    def _act(self, obs) -> Any:
         raise NotImplemented("You must implement an agent")
 
     def _closest_food(self, obs, max_food_level=None, start=None):
-
-        if start is None:
-            x, y = self.observed_position
-        else:
-            x, y = start
+        x, y = start if start else self.observed_position
 
         field = np.copy(obs.field)
+        food_lvls, food_feats = field[:, :, 0], field[:, :, 1]
 
         if max_food_level:
-            field[field > max_food_level] = 0
+            food_lvls[food_lvls > max_food_level] = 0
 
-        r, c = np.nonzero(field)
+        r, c = np.nonzero(food_lvls)
         try:
             min_idx = ((r - x) ** 2 + (c - y) ** 2).argmin()
         except ValueError:

@@ -4,9 +4,9 @@ from itertools import repeat, product
 import numpy as np
 import pandas as pd
 
-from agents import H1
-from lbforaging import Agent, Env
-from lbforaging.environment import Action
+from .heuristic_agent import H1
+from ..foraging import Agent, ForagingEnv as Env
+from ..foraging.environment import Action
 
 _CACHE = None
 
@@ -168,7 +168,7 @@ class QAgent(Agent):
     def choose_action(self, state, obs):
         return self.Q.choose_action(state)[0]
 
-    def step(self, obs):
+    def _act(self, obs):
 
         if self.Q is None:
             self.Q = QLearningTable(

@@ -57,10 +57,10 @@ class HBAAgent(QAgent):
 
         return max(exppay.items(), key=operator.itemgetter(1))[0]
 
-    def step(self, obs):
+    def _act(self, obs):
         if obs.current_step > 0:
             self.update_belief(obs)
-        val = super().step(obs)
+        val = super().act(obs)
         self.prev_obs = obs
         return val
 
@@ -73,7 +73,7 @@ class HBAAgent(QAgent):
             obs = env._make_obs(env.players[i])
             for j, t in enumerate(self.type_space):
                 agent = t(env.players[i])
-                action = agent._step(obs)
+                action = agent.act(obs)
                 moves[i, j] = action
         return moves
 
@@ -132,7 +132,7 @@ class HBAAgent(QAgent):
                     else:
                         action = random.choice(observations[i].actions)
                 else:
-                    action = player.step(observations[i])
+                    action = player.act(observations[i])
 
                 # make sure the action is valid (if not replace with random action):
                 action = (

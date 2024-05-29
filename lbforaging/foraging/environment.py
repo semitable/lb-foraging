@@ -87,6 +87,7 @@ class ForagingEnv(Env):
         normalize_reward=True,
         grid_observation=False,
         penalty=0.0,
+        render_mode=None,
     ):
         self.logger = logging.getLogger(__name__)
         self.seed()
@@ -103,6 +104,7 @@ class ForagingEnv(Env):
         self.force_coop = force_coop
         self._game_over = None
 
+        # self.render_mode = render_mode
         self._rendering_initialized = False
         self._valid_actions = None
         self._max_episode_steps = max_episode_steps
@@ -151,8 +153,6 @@ class ForagingEnv(Env):
                 self.players
             )
 
-            print(f"min_obs: {min_obs}")
-            print(f"max_obs: {max_obs}")
         else:
             # grid observation space
             grid_shape = (1 + 2 * self.sight, 1 + 2 * self.sight)
@@ -300,13 +300,14 @@ class ForagingEnv(Env):
             ):
                 continue
 
-            food_level = (
-                min_level
-                if min_level == max_level
-                # ! this is excluding food of level `max_level` but is kept for
-                # ! consistency with prior LBF versions
-                else self.np_random.randint(min_level, max_level)
-            )
+            # food_level = (
+            #     min_level
+            #     if min_level == max_level
+            #     # ! this is excluding food of level `max_level` but is kept for
+            #     # ! consistency with prior LBF versions
+            #     else self.np_random.randint(min_level, max_level)
+            # )
+            food_level = 2
             self.field[row, col] = [food_level, food_count + 1]
             food_count += 1
         self._food_spawned = self.field[:, :, 0].sum()
@@ -324,10 +325,12 @@ class ForagingEnv(Env):
         return True
 
     def spawn_players(self, max_player_level):
-        for player in self.players:
-
+        for m, player in enumerate(self.players):
             attempts = 0
             player.reward = 0
+
+            # prefs = np.array([1.0, 1.0, -1.5]) if m == 0 else np.array([-1.5, 1.0, 1.0])
+            prefs = np.ones(3)
 
             while attempts < 1000:
                 row = self.np_random.randint(0, self.rows)
@@ -335,8 +338,9 @@ class ForagingEnv(Env):
                 if self._is_empty_location(row, col):
                     player.setup(
                         (row, col),
-                        self.np_random.randint(1, max_player_level + 1),
-                        np.ones(self.max_food),
+                        1,
+                        # self.np_random.randint(1, max_player_level + 1),
+                        prefs,
                         self.field_size,
                     )
                     break
@@ -500,6 +504,7 @@ class ForagingEnv(Env):
                     return p.reward
 
         observations = [self._make_obs(player) for player in self.players]
+
         if self._grid_observation:
             layers = make_global_grid_arrays()
             agents_bounds = [
@@ -515,8 +520,7 @@ class ForagingEnv(Env):
             nobs = tuple([make_obs_array(obs) for obs in observations])
         nreward = [get_player_reward(obs) for obs in observations]
         ndone = [obs.game_over for obs in observations]
-        # ninfo = [{'observation': obs} for obs in observations]
-        ninfo = {}
+        info = {"full_observations": observations}
 
         # check the space of obs
         for i, obs in enumerate(nobs):
@@ -524,7 +528,7 @@ class ForagingEnv(Env):
                 obs
             ), f"obs space error: obs: {obs}, obs_space: {self.observation_space[i]}"
 
-        return nobs, nreward, ndone, ninfo
+        return nobs, nreward, ndone, info
 
     def reset(self):
         self.field = np.zeros(self.field_size + (2,), np.int32)
@@ -542,13 +546,12 @@ class ForagingEnv(Env):
     def step(self, actions):
         self.current_step += 1
 
-        for p in self.players:
-            p.reward = 0
-
-        actions = [
-            Action(a) if Action(a) in self._valid_actions[p] else Action.NONE
-            for p, a in zip(self.players, actions)
-        ]
+        for i, a in enumerate(actions):
+            act = Action(a)
+            self.players[i].reward = 0 if act == Action.NONE else -self.penalty
+            actions[i] = (
+                act if act in self._valid_actions[self.players[i]] else Action.NONE
+            )
 
         loading_players = set()
 
@@ -598,9 +601,6 @@ class ForagingEnv(Env):
             loading_players = loading_players - set(adj_players)
 
             if adj_player_level < food_level:
-                # failed to load
-                for a in adj_players:
-                    a.reward -= self.penalty
                 continue
 
             # else the food was loaded and each player scores points

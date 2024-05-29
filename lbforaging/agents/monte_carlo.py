@@ -179,7 +179,7 @@ class MonteCarloAgent(Agent):
         super().__init__(*kargs, **kwargs)
         pass
 
-    def step(self, obs):
+    def _act(self, obs):
 
         my_id = 0  # todo fix this
         env = Env.from_obs(obs)

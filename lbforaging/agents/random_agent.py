@@ -1,10 +1,10 @@
 import random
 
-from lbforaging import Agent
+from lbforaging.foraging import Agent
 
 
 class RandomAgent(Agent):
     name = "Random Agent"
 
-    def step(self, obs):
+    def _act(self, obs):
         return random.choice(obs.actions)
