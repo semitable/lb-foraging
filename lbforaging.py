@@ -2,7 +2,7 @@ import argparse
 import logging
 import random
 import time
-import gym
+import gymnasium as gym
 import numpy as np
 import lbforaging
 
@@ -11,8 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 def _game_loop(env, render):
-    """
-    """
+    """ """
     obs = env.reset()
     done = False
 

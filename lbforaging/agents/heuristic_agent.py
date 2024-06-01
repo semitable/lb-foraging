@@ -16,16 +16,21 @@ class HeuristicAgent(Agent):
         y, x = self.observed_position
         r, c = target
 
+        poss_actions = []
+
         if r < y and Action.NORTH in allowed:
-            return Action.NORTH
+            poss_actions.append(Action.NORTH)
         elif r > y and Action.SOUTH in allowed:
-            return Action.SOUTH
-        elif c > x and Action.EAST in allowed:
-            return Action.EAST
+            poss_actions.append(Action.SOUTH)
+        if c > x and Action.EAST in allowed:
+            poss_actions.append(Action.EAST)
         elif c < x and Action.WEST in allowed:
-            return Action.WEST
-        else:
-            raise ValueError("No simple path found")
+            poss_actions.append(Action.WEST)
+
+        if len(poss_actions) == 0:
+            return Action.NONE
+
+        return random.choice(poss_actions)
 
 
 class H1(HeuristicAgent):
