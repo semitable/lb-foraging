@@ -96,9 +96,9 @@ class PrefsAgent(Agent):
 
         _, food_feats = self._get_food_info(obs, max_food_level)
         pos_food_vals = self._get_food_vals(food_feats) > 0
+
         if not np.any(pos_food_vals):
             return None
-
         r, c = np.nonzero(pos_food_vals)
 
         try:

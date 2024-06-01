@@ -11,7 +11,8 @@ class HeuristicAgent(Agent):
 
     def _center_of_players(self, players):
         coords = np.array([player.position for player in players])
-        return np.rint(coords.mean(axis=0))
+        center = np.rint(coords.mean(axis=0))
+        return (center[0], center[1])
 
     def _move_towards(self, target, allowed):
 
