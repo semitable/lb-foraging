@@ -2,11 +2,14 @@ import logging
 from collections import namedtuple, defaultdict
 from enum import Enum
 from itertools import product
+from typing import List, Tuple
 
 # from gym import Env
 import gymnasium as gym
 from gymnasium.utils import seeding
 import numpy as np
+
+from lbforaging.utils import to_one_hot
 
 
 class Action(Enum):
@@ -32,25 +35,37 @@ class Player:
         self.position = None
         self.level = None
         self.preferences = None
+        self.features = None
         self.field_size = None
-        self.score = None
-        self.reward = 0
+        self.score = 0.0
+        self.reward = 0.0
         self.history = None
         self.current_step = None
 
-    def setup(self, position, level, preferences, field_size):
+    def setup(self, position, level, preferences, features, field_size):
         self.history = []
         self.position = position
         self.level = level
         self.preferences = preferences
+        self.features = features
         self.field_size = field_size
-        self.score = 0
+        self.reward = 0.0
+        self.score = 0.0
 
     def set_controller(self, controller):
         self.controller = controller
 
     def step(self, obs):
         return self.controller._step(obs)
+
+    def food_utils(self, food_features):
+        assert self.preferences is not None
+        assert self.preferences.shape == food_features.shape
+        return np.dot(self.preferences, food_features)
+
+    def set_reward(self, r: float):
+        self.reward = r
+        self.score += r
 
     @property
     def name(self):
@@ -73,18 +88,21 @@ class ForagingEnv(gym.Env):
         ["field", "actions", "players", "game_over", "sight", "current_step"],
     )
     PlayerObservation = namedtuple(
-        "PlayerObservation", ["position", "level", "history", "reward", "is_self"]
+        "PlayerObservation",
+        ["position", "level", "features", "history", "reward", "is_self"],
     )  # reward is available only if is_self
 
     def __init__(
         self,
-        players,
-        max_player_level,
-        field_size,
-        max_food,
-        sight,
-        max_episode_steps,
-        force_coop,
+        players: int,
+        max_player_level: int,
+        field_size: Tuple[int],
+        max_food: int,
+        food_feature_dim: int,
+        agent_feature_dim: int,
+        sight: int,
+        max_episode_steps: int,
+        force_coop: bool,
         normalize_reward=True,
         grid_observation=False,
         penalty=0.0,
@@ -92,12 +110,15 @@ class ForagingEnv(gym.Env):
     ):
         self.logger = logging.getLogger(__name__)
         self.seed()
+
+        self.field_size = field_size
+        self.food_feature_dim = food_feature_dim
+        self.agent_feature_dim = agent_feature_dim
+        self.init_field()
+
         self.players = [Player() for _ in range(players)]
-
-        self.field = np.zeros(field_size + (2,), np.int32)
-
+        self.n_agents = len(self.players)
         self.penalty = penalty
-
         self.max_food = max_food
         self._food_spawned = 0.0
         self.max_player_level = max_player_level
@@ -122,7 +143,8 @@ class ForagingEnv(gym.Env):
 
         self.viewer = None
 
-        self.n_agents = len(self.players)
+    def init_field(self):
+        self.field = np.zeros(self.field_size + (1 + self.food_feature_dim,), np.int32)
 
     def seed(self, seed=None):
         self.np_random, seed = seeding.np_random(seed)
@@ -135,24 +157,19 @@ class ForagingEnv(gym.Env):
         """
         if not self._grid_observation:
             field_x, field_y, _ = self.field.shape
+            min_loc, max_loc = [-1, -1], [field_x - 1, field_y - 1]
             max_food_level = self.max_player_level * len(self.players)
-            min_obs = [-1, -1, 0, 0] * self.max_food + [
-                -1,
-                -1,
-                0,
-            ] * len(self.players)
-            max_obs = [
-                field_x - 1,
-                field_y - 1,
-                self.max_food,
-                max_food_level,
-            ] * self.max_food + [
-                field_x - 1,
-                field_y - 1,
-                self.max_player_level,
-            ] * len(
-                self.players
-            )
+
+            min_fruit_obs = [*min_loc, 0] + [0] * self.food_feature_dim
+            max_fruit_obs = [*max_loc, max_food_level] + [1] * self.food_feature_dim
+
+            min_agent_obs = [*min_loc, 0] + [0] * self.agent_feature_dim
+            max_agent_obs = [*max_loc, self.max_player_level] + [
+                1
+            ] * self.agent_feature_dim
+
+            min_obs = min_fruit_obs * self.max_food + min_agent_obs * len(self.players)
+            max_obs = max_fruit_obs * self.max_food + max_agent_obs * len(self.players)
 
         else:
             # grid observation space
@@ -201,10 +218,6 @@ class ForagingEnv(gym.Env):
         return env
 
     @property
-    def field_size(self):
-        return self.field.shape[:2]
-
-    @property
     def rows(self):
         return self.field_size[0]
 
@@ -248,13 +261,13 @@ class ForagingEnv(gym.Env):
         return self.field[row, col][0]
 
     def food_feature(self, row, col):
-        return self.field[row, col][1]
+        return self.field[row, col][1:]
 
     def food_levels(self):
         return self.field[:, :, 0]
 
     def food_features(self):
-        return self.field[:, :, 1]
+        return self.field[:, :, 1:]
 
     def adjacent_food(self, row, col):
         return (
@@ -308,13 +321,15 @@ class ForagingEnv(gym.Env):
             #     # ! consistency with prior LBF versions
             #     else self.np_random.integers(min_level, max_level)
             # )
-            food_level = 2
-            self.field[row, col] = [food_level, food_count + 1]
+
+            food_level = self.np_random.integers(1, 3)
+            food_feature_vec = to_one_hot(food_count, self.food_feature_dim)
+            self.field[row, col] = [food_level, *food_feature_vec]
             food_count += 1
         self._food_spawned = self.field[:, :, 0].sum()
 
     def remove_food(self, row, col):
-        self.field[row, col] = [0, 0]
+        self.field[row, col] = [0] * self.field.shape[2]
 
     def _is_empty_location(self, row, col):
         if self.food_level(row, col) > 0:
@@ -328,10 +343,10 @@ class ForagingEnv(gym.Env):
     def spawn_players(self, max_player_level):
         for m, player in enumerate(self.players):
             attempts = 0
-            player.reward = 0
 
             # prefs = np.array([1.0, 1.0, -1.5]) if m == 0 else np.array([-1.5, 1.0, 1.0])
-            prefs = np.ones(3)
+            prefs = np.array([1.0, 2.0, 0.0])
+            feature = to_one_hot(m + 1, self.agent_feature_dim)
 
             while attempts < 1000:
                 row = self.np_random.integers(0, self.rows)
@@ -342,6 +357,7 @@ class ForagingEnv(gym.Env):
                         1,
                         # self.np_random.integers(1, max_player_level + 1),
                         prefs,
+                        feature,
                         self.field_size,
                     )
                     break
@@ -390,19 +406,18 @@ class ForagingEnv(gym.Env):
                         player.position, self.sight, a.position
                     ),
                     level=a.level,
+                    features=a.features,
                     is_self=a == player,
                     history=a.history,
                     reward=a.reward if a == player else None,
                 )
                 for a in self.players
-                if (
-                    min(
-                        self._transform_to_neighborhood(
-                            player.position, self.sight, a.position
-                        )
+                if min(
+                    self._transform_to_neighborhood(
+                        player.position, self.sight, a.position
                     )
-                    >= 0
                 )
+                >= 0
                 and max(
                     self._transform_to_neighborhood(
                         player.position, self.sight, a.position
@@ -431,24 +446,28 @@ class ForagingEnv(gym.Env):
 
             food_levels, food_features = (
                 observation.field[:, :, 0],
-                observation.field[:, :, 1],
+                observation.field[:, :, 1:],
             )
 
-            for i, (y, x) in enumerate(zip(*np.nonzero(food_levels))):
-                start, end = 4 * i, 4 * (i + 1)
-                obs[start:end] = [
-                    y,
-                    x,
-                    food_features[y, x],
-                    food_levels[y, x],
-                ]
+            food_chunk_len = 3 + self.food_feature_dim
+            agent_chunk_len = 3 + self.agent_feature_dim
 
-            default_player_repr = [-1, -1, 0]
-            obs[self.max_food * 4 : len(obs)] = default_player_repr * len(self.players)
+            for i, (y, x) in enumerate(zip(*np.nonzero(food_levels))):
+                start, end = food_chunk_len * i, food_chunk_len * (i + 1)
+                f = food_features[y, x].tolist()
+                obs[start:end] = [y, x, food_levels[y, x], *f]
+
+            default_player_repr = [-1, -1, 0] + [0] * self.agent_feature_dim
+            obs[self.max_food * food_chunk_len : len(obs)] = default_player_repr * len(
+                self.players
+            )
 
             for i, p in enumerate(seen_players):
-                start, end = self.max_food * 4 + 3 * i, self.max_food * 4 + 3 * (i + 1)
-                obs[start:end] = [p.position[0], p.position[1], p.level]
+                offset = self.max_food * food_chunk_len
+                start, end = offset + (agent_chunk_len * i), offset + (
+                    agent_chunk_len * (i + 1)
+                )
+                obs[start:end] = [*p.position, p.level] + p.features.tolist()
 
             return obs
 
@@ -536,7 +555,7 @@ class ForagingEnv(gym.Env):
         if seed is not None:
             self.seed(seed)
 
-        self.field = np.zeros(self.field_size + (2,), np.int32)
+        self.init_field()
         self.spawn_players(self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
 
@@ -552,7 +571,7 @@ class ForagingEnv(gym.Env):
 
         for i, a in enumerate(actions):
             act = Action(a)
-            self.players[i].reward = 0 if act == Action.NONE else -self.penalty
+            self.players[i].set_reward(0 if act == Action.NONE else -self.penalty)
             actions[i] = (
                 act if act in self._valid_actions[self.players[i]] else Action.NONE
             )
@@ -607,14 +626,11 @@ class ForagingEnv(gym.Env):
 
             # else the food was loaded and each player scores points
             for a in adj_players:
-                assert (
-                    len(a.preferences) >= food_feature
-                ), "mismatch between feature and preference dimensions"
-                a.reward = float(a.level * food_level * a.preferences[food_feature - 1])
+                u_food = a.food_utils(food_feature)
+                r = float(a.level * food_level * u_food)
                 if self._normalize_reward:
-                    a.reward = a.reward / float(
-                        adj_player_level * self._food_spawned
-                    )  # normalize reward
+                    r /= float(adj_player_level * self._food_spawned)
+                a.set_reward(r)
             # and the food is removed
             self.remove_food(frow, fcol)
 
@@ -622,9 +638,6 @@ class ForagingEnv(gym.Env):
             self.field.sum() == 0 or self._max_episode_steps <= self.current_step
         )
         self._gen_valid_moves()
-
-        for p in self.players:
-            p.score += p.reward
 
         return self._make_gym_obs()
 
