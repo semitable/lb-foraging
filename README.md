@@ -4,6 +4,9 @@
  <p align="center">A multi-agent reinforcement learning environment</p>
 </p>
 
+> [!CAUTION]
+> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency. For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version XXX of the repository.
+
 <!-- TABLE OF CONTENTS -->
 <h1> Table of Contents </h1>
 
