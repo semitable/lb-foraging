@@ -35,8 +35,7 @@ def _game_loop(env, render):
 
 
 def main(episodes=1, render=False):
-    # lbforaging.register_envs()
-    env = gym.make("Foraging-simple-v3")
+    env = gym.make("Foraging-8x8-2p-2f-v3")
 
     for episode in range(episodes):
         _game_loop(env, render)

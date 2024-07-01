@@ -23,7 +23,7 @@
 > The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency. For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version XXX of the repository. The main changes to the interface are as follows:
 > - `obss = env.reset()` --> `obss, info = env.reset()`
 > - `obss, rewards, dones, info = env.step(actions)` --> `obss, rewards, done, truncated, info = env.step(actions)`
-> - `import lbforaging` does not automatically register many environments but only a few selected simple environments ("Foraging-simple-v3", "Foraging-2s-simple-v3", "Foraging-coop-v3", "Foraging-2s-coop-v3"). To register the environments as previously done, call `import lbforaging; lbforaging.register_envs()`. Warning: due to changes to gym(nasium) registration, this might take a minute or two!
+> - The `done` flag is now given as a single boolean value instead of a list of booleans.
 > - You can give the reset function a particular seed with `obss, info = env.reset(seed=42)` to initialise a particular episode.
 
 
@@ -73,7 +73,7 @@ import lbforaging
 
 Then create an environment:
 ```python
-env = gym.make("Foraging-8x8-2p-1f-v2")
+env = gym.make("Foraging-8x8-2p-1f-v3")
 ```
 
 We offer a variety of environments using this template:
@@ -86,7 +86,7 @@ But you can register your own variation using (change parameters as needed):
 from gym.envs.registration register
 
 register(
-    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v2".format(s, p, f, "-coop" if c else ""),
+    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v3".format(s, p, f, "-coop" if c else ""),
     entry_point="lbforaging.foraging:ForagingEnv",
     kwargs={
         "players": p,

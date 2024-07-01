@@ -7,9 +7,6 @@ import lbforaging  # noqa
 from lbforaging.foraging.environment import Action
 
 
-lbforaging.register_envs()
-
-
 def manhattan_distance(x, y):
     return sum(abs(a - b) for a, b in zip(x, y))
 
