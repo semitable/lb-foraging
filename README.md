@@ -4,9 +4,6 @@
  <p align="center">A multi-agent reinforcement learning environment</p>
 </p>
 
-> [!CAUTION]
-> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency. For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version XXX of the repository.
-
 <!-- TABLE OF CONTENTS -->
 <h1> Table of Contents </h1>
 
@@ -20,6 +17,14 @@
 - [Please Cite](#please-cite)
 - [Contributing](#contributing)
 - [Contact](#contact)
+
+
+> [!CAUTION]
+> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency. For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version XXX of the repository. The main changes to the interface are as follows:
+> `obss = env.reset()` --> `obss, info = env.reset()`
+> `obss, rewards, dones, info = env.step(actions)` --> `obss, rewards, done, truncated, info = env.step(actions)`
+> `import lbforaging` does not automatically register many environments but only a few selected simple environments ("Foraging-simple-v3", "Foraging-2s-simple-v3", "Foraging-coop-v3", "Foraging-2s-coop-v3"). To register the environments as previously done, call `import lbforaging; lbforaging.register_envs()`. Warning: due to changes to gym(nasium) registration, this might take a minute or two!
+> You can give the reset function a particular seed with `obss, info = env.reset(seed=42)` to initialise a particular episode.
 
 
 <!-- ABOUT THE PROJECT -->

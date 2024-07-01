@@ -63,7 +63,10 @@ class ForagingEnv(gym.Env):
     A class that contains rules/actions for the game level-based foraging.
     """
 
-    metadata = {"render_modes": ["human"]}
+    metadata = {
+        "render_modes": ["human"],
+        "render_fps": 5,
+    }
 
     action_set = [Action.NORTH, Action.SOUTH, Action.WEST, Action.EAST, Action.LOAD]
     Observation = namedtuple(
@@ -94,7 +97,6 @@ class ForagingEnv(gym.Env):
     ):
         self.logger = logging.getLogger(__name__)
         self.render_mode = render_mode
-        self.seed()
         self.players = [Player() for _ in range(players)]
 
         self.field = np.zeros(field_size, np.int32)
@@ -180,8 +182,8 @@ class ForagingEnv(gym.Env):
         self.n_agents = len(self.players)
 
     def seed(self, seed=None):
-        self._np_random, seed = seeding.np_random(seed)
-        return [seed]
+        if seed is not None:
+            self._np_random, seed = seeding.np_random(seed)
 
     def _get_observation_space(self):
         """The Observation Space for each agent.
@@ -239,7 +241,12 @@ class ForagingEnv(gym.Env):
             min_obs = np.stack([agents_min, foods_min, access_min])
             max_obs = np.stack([agents_max, foods_max, access_max])
 
-        return gym.spaces.Box(np.array(min_obs), np.array(max_obs), dtype=np.float32)
+        low_obs = np.array(min_obs)
+        high_obs = np.array(max_obs)
+        assert low_obs.shape == high_obs.shape
+        return gym.spaces.Box(
+            low=low_obs, high=high_obs, shape=[len(low_obs)], dtype=np.float32
+        )
 
     @classmethod
     def from_obs(cls, obs):
@@ -250,7 +257,19 @@ class ForagingEnv(gym.Env):
             player.score = p.score if p.score else 0
             players.append(player)
 
-        env = cls(players, None, None, None, None)
+        env = cls(
+            players,
+            min_player_level=1,
+            max_player_level=2,
+            min_food_level=1,
+            max_food_level=None,
+            field_size=None,
+            max_num_food=None,
+            sight=None,
+            max_episode_steps=50,
+            force_coop=False,
+        )
+
         env.field = np.copy(obs.field)
         env.current_step = obs.current_step
         env.sight = obs.sight
@@ -332,14 +351,14 @@ class ForagingEnv(gym.Env):
         min_levels = max_levels if self.force_coop else min_levels
 
         # permute food levels
-        food_permutation = np.random.permutation(max_num_food)
+        food_permutation = self.np_random.permutation(max_num_food)
         min_levels = min_levels[food_permutation]
         max_levels = max_levels[food_permutation]
 
         while food_count < max_num_food and attempts < 1000:
             attempts += 1
-            row = self._np_random.integers(1, self.rows - 1)
-            col = self._np_random.integers(1, self.cols - 1)
+            row = self.np_random.integers(1, self.rows - 1)
+            col = self.np_random.integers(1, self.cols - 1)
 
             # check if it has neighbors:
             if (
@@ -352,7 +371,7 @@ class ForagingEnv(gym.Env):
             self.field[row, col] = (
                 min_levels[food_count]
                 if min_levels[food_count] == max_levels[food_count]
-                else self._np_random.integers(
+                else self.np_random.integers(
                     min_levels[food_count], max_levels[food_count] + 1
                 )
             )
@@ -370,7 +389,7 @@ class ForagingEnv(gym.Env):
 
     def spawn_players(self, min_player_levels, max_player_levels):
         # permute player levels
-        player_permutation = np.random.permutation(len(self.players))
+        player_permutation = self.np_random.permutation(len(self.players))
         min_player_levels = min_player_levels[player_permutation]
         max_player_levels = max_player_levels[player_permutation]
         for player, min_player_level, max_player_level in zip(
@@ -380,14 +399,12 @@ class ForagingEnv(gym.Env):
             player.reward = 0
 
             while attempts < 1000:
-                row = self._np_random.integers(0, self.rows)
-                col = self._np_random.integers(0, self.cols)
+                row = self.np_random.integers(0, self.rows)
+                col = self.np_random.integers(0, self.cols)
                 if self._is_empty_location(row, col):
                     player.setup(
                         (row, col),
-                        self._np_random.integers(
-                            min_player_level, max_player_level + 1
-                        ),
+                        self.np_random.integers(min_player_level, max_player_level + 1),
                         self.field_size,
                     )
                     break
@@ -578,7 +595,8 @@ class ForagingEnv(gym.Env):
 
     def reset(self, seed=None, options=None):
         if seed is not None:
-            self.seed(seed)
+            # setting seed
+            super().reset(seed=seed, options=options)
 
         if self.render_mode == "human":
             self.render()
@@ -645,7 +663,6 @@ class ForagingEnv(gym.Env):
                 loading_players.add(player)
 
         # and do movements for non colliding players
-
         for k, v in collisions.items():
             if len(v) > 1:  # make sure no more than an player will arrive at location
                 continue
@@ -664,7 +681,6 @@ class ForagingEnv(gym.Env):
             ]
 
             adj_player_level = sum([a.level for a in adj_players])
-
             loading_players = loading_players - set(adj_players)
 
             if adj_player_level < food:
@@ -713,3 +729,15 @@ class ForagingEnv(gym.Env):
     def close(self):
         if self.viewer:
             self.viewer.close()
+
+    def test_make_gym_obs(self):
+        """Test wrapper to test the current observation in a public manner."""
+        return self._make_gym_obs()
+
+    def test_gen_valid_moves(self):
+        """Wrapper around a private method to test if the generated moves are valid."""
+        try:
+            self._gen_valid_moves()
+        except Exception as _:
+            return False
+        return True

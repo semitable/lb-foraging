@@ -1,12 +1,14 @@
-from . import QAgent
-from foraging import Env
-import random
-import numpy as np
-from agents import H1, H2, H3, H4
-from itertools import product
 from collections import defaultdict
 from functools import reduce
+from itertools import product
 import operator
+import random
+
+import numpy as np
+
+from lbforaging.agents.q_agent import QAgent
+from lbforaging.agents.heuristic_agent import H1, H2, H3, H4
+from lbforaging.foraging.environment import ForagingEnv as Env
 
 
 class HBAAgent(QAgent):
@@ -65,7 +67,6 @@ class HBAAgent(QAgent):
         return val
 
     def generate_typespace_moves(self, env, exclude_player=None):
-
         moves = np.empty((len(env.players), len(self.type_space)), dtype=object)
         for i, player in enumerate(env.players):
             # if i == exclude_player:  # todo this player can be excluded (because it's us)
@@ -123,7 +124,6 @@ class HBAAgent(QAgent):
             actions = []
 
             for i, player in enumerate(env.players):
-
                 if i == player_no:
                     if random.random() > self.e_2:
                         action = self.Q.choose_action(

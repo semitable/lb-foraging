@@ -14,7 +14,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
     ],
-    install_requires=["numpy", "gymnasium", "pyglet==1.5", "six"],
+    install_requires=["numpy", "gymnasium", "pyglet<2", "six"],
     extras_require={"test": ["pytest"]},
     include_package_data=True,
 )

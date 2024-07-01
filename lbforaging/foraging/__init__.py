@@ -1,1 +1,1 @@
-from lbforaging.foraging.environment import ForagingEnv
+from lbforaging.foraging.environment import ForagingEnv  # noqa

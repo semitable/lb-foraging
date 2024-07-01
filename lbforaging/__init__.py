@@ -3,15 +3,6 @@ from itertools import product
 from gymnasium import register
 
 
-sizes = range(5, 20)
-players = range(2, 20)
-foods = range(1, 10)
-max_food_level = [None, 1]
-coop = [True, False]
-partial_obs = [True, False]
-pens = [True, False]
-
-
 register(
     id="Foraging-simple-v3",
     entry_point="lbforaging.foraging:ForagingEnv",
@@ -83,6 +74,15 @@ register(
         "grid_observation": False,
     },
 )
+
+
+sizes = range(5, 20)
+players = range(2, 10)
+foods = range(1, 5)
+max_food_level = [None]  # [None, 1]
+coop = [True, False]
+partial_obs = [True, False]
+pens = [False]  # [True, False]
 
 
 def register_envs():
