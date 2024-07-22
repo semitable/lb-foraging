@@ -5,7 +5,7 @@ import numpy as np
 _MAX_INT = 999999
 
 
-class Agent:
+class BaseAgent:
     name = "Prototype Agent"
 
     def __repr__(self):
@@ -30,10 +30,9 @@ class Agent:
         return action
 
     def step(self, obs):
-        raise NotImplemented("You must implement an agent")
+        raise NotImplementedError("You must implement an agent")
 
     def _closest_food(self, obs, max_food_level=None, start=None):
-
         if start is None:
             x, y = self.observed_position
         else:
@@ -53,7 +52,6 @@ class Agent:
         return r[min_idx], c[min_idx]
 
     def _make_state(self, obs):
-
         state = str(obs.field)
         for c in ["]", "[", " ", "\n"]:
             state = state.replace(c, "")

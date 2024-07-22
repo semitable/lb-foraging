@@ -1,10 +1,12 @@
 import random
+
 import numpy as np
-from foraging import Agent
+
+from lbforaging.agents.agent import BaseAgent
 from foraging.environment import Action
 
 
-class HeuristicAgent(Agent):
+class HeuristicAgent(BaseAgent):
     name = "Heuristic Agent"
 
     def _center_of_players(self, players):
@@ -12,7 +14,6 @@ class HeuristicAgent(Agent):
         return np.rint(coords.mean(axis=0))
 
     def _move_towards(self, target, allowed):
-
         y, x = self.observed_position
         r, c = target
 
@@ -28,13 +29,13 @@ class HeuristicAgent(Agent):
             raise ValueError("No simple path found")
 
     def step(self, obs):
-        raise NotImplemented("Heuristic agent is implemented by H1-H4")
+        raise NotImplementedError("Heuristic agent is implemented by H1-H4")
 
 
 class H1(HeuristicAgent):
     """
-	H1 agent always goes to the closest food
-	"""
+    H1 agent always goes to the closest food
+    """
 
     name = "H1"
 
@@ -56,13 +57,12 @@ class H1(HeuristicAgent):
 
 class H2(HeuristicAgent):
     """
-	H2 Agent goes to the one visible food which is closest to the centre of visible players
-	"""
+    H2 Agent goes to the one visible food which is closest to the centre of visible players
+    """
 
     name = "H2"
 
     def step(self, obs):
-
         players_center = self._center_of_players(obs.players)
 
         try:
@@ -82,13 +82,12 @@ class H2(HeuristicAgent):
 
 class H3(HeuristicAgent):
     """
-	H3 Agent always goes to the closest food with compatible level
-	"""
+    H3 Agent always goes to the closest food with compatible level
+    """
 
     name = "H3"
 
     def step(self, obs):
-
         try:
             r, c = self._closest_food(obs, self.level)
         except TypeError:
@@ -106,14 +105,13 @@ class H3(HeuristicAgent):
 
 class H4(HeuristicAgent):
     """
-	H4 Agent goes to the one visible food which is closest to all visible players
-	 such that the sum of their and H4's level is sufficient to load the food
-	"""
+    H4 Agent goes to the one visible food which is closest to all visible players
+     such that the sum of their and H4's level is sufficient to load the food
+    """
 
     name = "H4"
 
     def step(self, obs):
-
         players_center = self._center_of_players(obs.players)
         players_sum_level = sum([a.level for a in obs.players])
 

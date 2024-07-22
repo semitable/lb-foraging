@@ -19,6 +19,14 @@
 - [Contact](#contact)
 
 
+> [!CAUTION]
+> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency. For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version v1.1.1 of the repository. The main changes to the interface are as follows:
+> - `obss = env.reset()` --> `obss, info = env.reset()`
+> - `obss, rewards, dones, info = env.step(actions)` --> `obss, rewards, done, truncated, info = env.step(actions)`
+> - The `done` flag is now given as a single boolean value instead of a list of booleans.
+> - You can give the reset function a particular seed with `obss, info = env.reset(seed=42)` to initialise a particular episode.
+
+
 <!-- ABOUT THE PROJECT -->
 # About The Project
 
@@ -65,7 +73,7 @@ import lbforaging
 
 Then create an environment:
 ```python
-env = gym.make("Foraging-8x8-2p-1f-v2")
+env = gym.make("Foraging-8x8-2p-1f-v3")
 ```
 
 We offer a variety of environments using this template:
@@ -78,7 +86,7 @@ But you can register your own variation using (change parameters as needed):
 from gym.envs.registration register
 
 register(
-    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v2".format(s, p, f, "-coop" if c else ""),
+    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v3".format(s, p, f, "-coop" if c else ""),
     entry_point="lbforaging.foraging:ForagingEnv",
     kwargs={
         "players": p,

@@ -7,9 +7,8 @@ import os
 import sys
 
 import numpy as np
-import math
 import six
-from gym import error
+from gymnasium import error
 
 if "Apple" in sys.version:
     if "DYLD_FALLBACK_LIBRARY_PATH" in os.environ:
@@ -19,7 +18,7 @@ if "Apple" in sys.version:
 
 try:
     import pyglet
-except ImportError as e:
+except ImportError:
     raise ImportError(
         """
     Cannot import pyglet.
@@ -31,7 +30,7 @@ except ImportError as e:
 
 try:
     from pyglet.gl import *
-except ImportError as e:
+except ImportError:
     raise ImportError(
         """
     Error occured while running `from pyglet.gl import *`
@@ -142,10 +141,10 @@ class Viewer(object):
                 (
                     "v2f",
                     (
-                        0, # LEFT X
-                        (self.grid_size + 1) * r + 1, # Y
-                        (self.grid_size + 1) * self.cols, # RIGHT X
-                        (self.grid_size + 1) * r + 1, # Y
+                        0,  # LEFT X
+                        (self.grid_size + 1) * r + 1,  # Y
+                        (self.grid_size + 1) * self.cols,  # RIGHT X
+                        (self.grid_size + 1) * r + 1,  # Y
                     ),
                 ),
                 ("c3B", (*_BLACK, *_BLACK)),
@@ -160,10 +159,10 @@ class Viewer(object):
                 (
                     "v2f",
                     (
-                        (self.grid_size + 1) * c + 1, # X
-                        0, # BOTTOM Y
-                        (self.grid_size + 1) * c + 1, # X
-                        (self.grid_size + 1) * self.rows, # TOP X
+                        (self.grid_size + 1) * c + 1,  # X
+                        0,  # BOTTOM Y
+                        (self.grid_size + 1) * c + 1,  # X
+                        (self.grid_size + 1) * self.rows,  # TOP X
                     ),
                 ),
                 ("c3B", (*_BLACK, *_BLACK)),
@@ -217,7 +216,11 @@ class Viewer(object):
         radius = self.grid_size / 5
 
         badge_x = col * (self.grid_size + 1) + (3 / 4) * (self.grid_size + 1)
-        badge_y = self.height - (self.grid_size + 1) * (row + 1) + (1 / 4) * (self.grid_size + 1)
+        badge_y = (
+            self.height
+            - (self.grid_size + 1) * (row + 1)
+            + (1 / 4) * (self.grid_size + 1)
+        )
 
         # make a circle
         verts = []

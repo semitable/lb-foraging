@@ -4,9 +4,10 @@ from itertools import repeat, product
 import numpy as np
 import pandas as pd
 
-from agents import H1
-from lbforaging import Agent, Env
-from lbforaging.environment import Action
+from lbforaging.agents import H1, BaseAgent
+from lbforaging.foraging.environment import ForagingEnv as Env
+from lbforaging.foraging.environment import Action
+
 
 _CACHE = None
 
@@ -95,7 +96,7 @@ class QLearningTable:
             )
 
 
-class QAgent(Agent):
+class QAgent(BaseAgent):
     name = "Q Agent"
 
     def __init__(self, *kargs, **kwargs):
@@ -109,7 +110,6 @@ class QAgent(Agent):
         self.e_2 = 0.2  # expand stage
 
     def expand(self, obs, depth):
-
         player_no = next((i for i, item in enumerate(obs.players) if item.is_self))
 
         env = Env.from_obs(obs)
@@ -126,7 +126,6 @@ class QAgent(Agent):
             actions = []
 
             for i, player in enumerate(env.players):
-
                 if i == player_no:
                     if random.random() > self.e_2:
                         action = self.Q.choose_action(
@@ -169,7 +168,6 @@ class QAgent(Agent):
         return self.Q.choose_action(state)[0]
 
     def step(self, obs):
-
         if self.Q is None:
             self.Q = QLearningTable(
                 actions=list(product(*repeat(Action, len(obs.players))))

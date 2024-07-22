@@ -1,46 +1,43 @@
 import argparse
 import logging
-import random
 import time
-import gym
-import numpy as np
-import lbforaging
 
+import gymnasium as gym
+import numpy as np
+
+import lbforaging  # noqa
 
 logger = logging.getLogger(__name__)
 
 
 def _game_loop(env, render):
-    """
-    """
-    obs = env.reset()
+    """ """
+    obss, _ = env.reset()
     done = False
+
+    returns = np.zeros(env.n_agents)
 
     if render:
         env.render()
         time.sleep(0.5)
 
     while not done:
-
         actions = env.action_space.sample()
 
-        nobs, nreward, ndone, _ = env.step(actions)
-        if sum(nreward) > 0:
-            print(nreward)
+        obss, rewards, done, _, _ = env.step(actions)
+        returns += rewards
 
         if render:
             env.render()
             time.sleep(0.5)
 
-        done = np.all(ndone)
-    # print(env.players[0].score, env.players[1].score)
+    print("Returns: ", returns)
 
 
-def main(game_count=1, render=False):
-    env = gym.make("Foraging-8x8-2p-2f-v2")
-    obs = env.reset()
+def main(episodes=1, render=False):
+    env = gym.make("Foraging-8x8-2p-2f-v3")
 
-    for episode in range(game_count):
+    for episode in range(episodes):
         _game_loop(env, render)
 
 
@@ -49,8 +46,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--render", action="store_true")
     parser.add_argument(
-        "--times", type=int, default=1, help="How many times to run the game"
+        "--episodes", type=int, default=1, help="How many episodes to run"
     )
 
     args = parser.parse_args()
-    main(args.times, args.render)
+    main(args.episodes, args.render)
