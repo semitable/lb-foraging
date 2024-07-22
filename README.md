@@ -20,7 +20,7 @@
 
 
 > [!CAUTION]
-> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency. For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version v1.1.1 of the repository. The main changes to the interface are as follows:
+> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency (many thanks @LukasSchaefer). For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version v1.1.1 of the repository. The main changes to the interface are as follows:
 > - `obss = env.reset()` --> `obss, info = env.reset()`
 > - `obss, rewards, dones, info = env.step(actions)` --> `obss, rewards, done, truncated, info = env.step(actions)`
 > - The `done` flag is now given as a single boolean value instead of a list of booleans.
