@@ -4,11 +4,13 @@ import pickle
 import random
 import time
 
-import networkx as nx
 import plotly.graph_objs as go
+import networkx as nx
 from networkx.drawing.nx_pydot import graphviz_layout
 
-from foraging import Agent, Env
+from lbforaging.foraging.environment import ForagingEnv as Env
+from lbforaging.agents.agent import BaseAgent
+
 
 MCTS_DEPTH = 15
 
@@ -172,7 +174,7 @@ class Node:
         return best
 
 
-class MonteCarloAgent(Agent):
+class MonteCarloAgent(BaseAgent):
     name = "Monte Carlo Agent"
 
     def __init__(self, *kargs, **kwargs):
@@ -180,7 +182,6 @@ class MonteCarloAgent(Agent):
         pass
 
     def step(self, obs):
-
         my_id = 0  # todo fix this
         env = Env.from_obs(obs)
         root = self.uct_search(env)
@@ -200,7 +201,6 @@ class MonteCarloAgent(Agent):
         future = timeout + time.time()
 
         while time.time() < future:
-
             # selection & expansion
             u_next = self.tree_policy(root)
 
