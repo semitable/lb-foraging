@@ -1,25 +1,40 @@
-# Level-Based Foraging Environment
-## A multi-agent environment for Reinforcement Learning
 
+<p align="center">
+ <img width="350px" src="docs/img/logo.png" align="center" alt="Level Based Foraging (LBF)" />
+ <p align="center">A multi-agent reinforcement learning environment</p>
+</p>
 
 <!-- TABLE OF CONTENTS -->
-## Table of Contents
+<h1> Table of Contents </h1>
 
-* [About the Project](#about-the-project)
-  * [Built With](#built-with)
-* [Getting Started](#getting-started)
-  * [Installation](#installation)
-* [Usage](#usage)
-* [Citation](#citation)
-* [Contributing](#contributing)
-* [Contact](#contact)
+- [About The Project](#about-the-project)
+- [Getting Started](#getting-started)
+  - [Installation](#installation)
+- [Usage](#usage)
+  - [Observation Space](#observation-space)
+  - [Action space](#action-space)
+  - [Rewards](#rewards)
+- [Please Cite](#please-cite)
+- [Contributing](#contributing)
+- [Contact](#contact)
 
+
+> [!CAUTION]
+> The LBF environment was updated to support the new [Gymnasium](https://gymnasium.farama.org/) interface in replacement of the deprecated `gym=0.21` dependency (many thanks @LukasSchaefer). For backwards compatibility, please see [Gymnasium compatibility documentation](https://gymnasium.farama.org/content/gym_compatibility/) or use version v1.1.1 of the repository. The main changes to the interface are as follows:
+> - `obss = env.reset()` --> `obss, info = env.reset()`
+> - `obss, rewards, dones, info = env.step(actions)` --> `obss, rewards, done, truncated, info = env.step(actions)`
+> - The `done` flag is now given as a single boolean value instead of a list of booleans.
+> - You can give the reset function a particular seed with `obss, info = env.reset(seed=42)` to initialise a particular episode.
 
 
 <!-- ABOUT THE PROJECT -->
-## About The Project
+# About The Project
 
 This environment is a mixed cooperative-competitive game, which focuses on the coordination of the agents involved. Agents navigate a grid world and collect food by cooperating with other agents if needed.
+
+<p align="center">
+ <img width="450px" src="docs/img/lbf.gif" align="center" alt="Level Based Foraging (LBF) illustration" />
+</p>
 
 More specifically, agents are placed in the grid world, and each is assigned a level. Food is also randomly scattered, each having a level on its own. Agents can navigate the environment and can attempt to collect food placed next to them. The collection of food is successful only if the sum of the levels of the agents involved in loading is equal to or higher than the level of the food. Finally, agents are awarded points equal to the level of the food they helped collect, divided by their contribution (their level). The figures below show two states of the game, one that requires cooperation, and one more competitive.
 
@@ -30,18 +45,10 @@ This is a Python simulator for level based foraging. It is based on OpenAI's RL 
 
 
 
-### Built With
-This section should list any major frameworks that you built your project using. Leave any add-ons/plugins for the acknowledgements section. Here are a few examples.
-* [Python](https://www.python.org)
-* [OpenAI's Gym](https://gym.openai.com/)
-* [pyglet](https://github.com/pyglet/pyglet)
-
-
-
 <!-- GETTING STARTED -->
-## Getting Started
+# Getting Started
 
-### Installation
+## Installation
 
 Install using pip
 ```sh
@@ -56,7 +63,7 @@ pip install -e .
 
 
 <!-- USAGE EXAMPLES -->
-## Usage
+# Usage
 
 Create environments with the gym framework.
 First import
@@ -66,7 +73,7 @@ import lbforaging
 
 Then create an environment:
 ```python
-env = gym.make("Foraging-8x8-2p-1f-v0")
+env = gym.make("Foraging-8x8-2p-1f-v3")
 ```
 
 We offer a variety of environments using this template:
@@ -79,7 +86,7 @@ But you can register your own variation using (change parameters as needed):
 from gym.envs.registration register
 
 register(
-    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v0".format(s, p, f, "-coop" if c else ""),
+    id="Foraging-{0}x{0}-{1}p-{2}f{3}-v3".format(s, p, f, "-coop" if c else ""),
     entry_point="lbforaging.foraging:ForagingEnv",
     kwargs={
         "players": p,
@@ -100,6 +107,12 @@ nobs, nreward, ndone, ninfo = env.step(actions)
 
 Where n-obs, n-rewards, n-done and n-info are LISTS of N items (where N is the number of agents). The i'th element of each list should be assigned to the i'th agent.
 
+
+
+## Observation Space
+
+## Action space
+
 actions is a LIST of N INTEGERS (one of each agent) that should be executed in that step. The integers should correspond to the Enum below:
 
 ```python
@@ -111,32 +124,52 @@ class Action(Enum):
     EAST = 4
     LOAD = 5
 ```
+Valid actions can always be sampled like in a gym environment, using:
+```python
+env.action_space.sample() # [2, 3, 0, 1]
+```
+Also, ALL actions are valid. If an agent cannot move to a location or load, his action will be replaced with `NONE` automatically.
 
+## Rewards
+
+The rewards are calculated as follows. When one or more agents load a food, the food level is rewarded to the agents weighted with the level of each agent. Then the reward is normalised so that at the end, the sum of the rewards (if all foods have been picked-up) is one. 
+If you prefer code:
+
+```python
+for a in adj_players: # the players that participated in loading the food
+    a.reward = float(a.level * food) # higher-leveled agents contribute more and are rewarded more. 
+    if self._normalize_reward:
+        a.reward = a.reward / float(
+            adj_player_level * self._food_spawned
+        )  # normalize reward so that the final sum of rewards is one.
+```
 
 <!-- CITATION -->
-## Citation
-1. A comperative evaluation of MARL algorithms that includes this environment
-```
-@article{papoudakis2020comparative,
-  title={Comparative Evaluation of Multi-Agent Deep Reinforcement Learning Algorithms},
-  author={Papoudakis, Georgios and Christianos, Filippos and Sch{\"a}fer, Lukas and Albrecht, Stefano V},
-  journal={arXiv preprint arXiv:2006.07869},
-  year={2020}
-}
-```
-2. A method that achieves state-of-the-art performance in many Level-Based Foraging tasks
+# Please Cite
+1. The paper that first uses this implementation of Level-based Foraging (LBF) and achieves state-of-the-art results:
 ```
 @inproceedings{christianos2020shared,
   title={Shared Experience Actor-Critic for Multi-Agent Reinforcement Learning},
-  author={Christianos, Filippos and Sch{\"a}fer, Lukas and Albrecht, Stefano V},
-  booktitle = {Advances in Neural Information Processing Systems},
+  author={Christianos, Filippos and Schäfer, Lukas and Albrecht, Stefano V},
+  booktitle = {Advances in Neural Information Processing Systems (NeurIPS)},
   year={2020}
 }
 ```
-
+2. A comperative evaluation of cooperative MARL algorithms and includes an introduction to this environment:
+```
+@inproceedings{papoudakis2021benchmarking,
+   title={Benchmarking Multi-Agent Deep Reinforcement Learning Algorithms in Cooperative Tasks},
+   author={Georgios Papoudakis and Filippos Christianos and Lukas Schäfer and Stefano V. Albrecht},
+   booktitle = {Proceedings of the Neural Information Processing Systems Track on Datasets and Benchmarks (NeurIPS)},
+   year={2021},
+   openreview = {https://openreview.net/forum?id=cIrPX-Sn5n},
+}
+```
 
 <!-- CONTRIBUTING -->
-## Contributing
+# Contributing
+
+**WARNING:** This is a fork meant as an archive of the code used in our publications. Development is still active in the [original repository](https://github.com/semitable/lb-foraging). Please redirect any issues, PRs, or questions there.
 
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
@@ -146,7 +179,7 @@ class Action(Enum):
 
 
 <!-- CONTACT -->
-## Contact
+# Contact
 
 Filippos Christianos - f.christianos@ed.ac.uk
 

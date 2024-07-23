@@ -1,9 +1,9 @@
 import random
 
-from foraging import Agent
+from lbforaging.agents.agent import BaseAgent
 
 
-class NNAgent(Agent):
+class NNAgent(BaseAgent):
     name = "NN Agent"
 
     def step(self, obs):

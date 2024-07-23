@@ -1,9 +1,9 @@
 import random
 
-from lbforaging import Agent
+from lbforaging.agents import BaseAgent
 
 
-class RandomAgent(Agent):
+class RandomAgent(BaseAgent):
     name = "Random Agent"
 
     def step(self, obs):
