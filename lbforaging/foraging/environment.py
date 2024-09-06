@@ -64,7 +64,7 @@ class ForagingEnv(gym.Env):
     """
 
     metadata = {
-        "render_modes": ["human"],
+        "render_modes": ["human", "rgb_array"],
         "render_fps": 5,
     }
 
@@ -720,11 +720,11 @@ class ForagingEnv(gym.Env):
         self.viewer = Viewer((self.rows, self.cols))
         self._rendering_initialized = True
 
-    def render(self, mode="human"):
+    def render(self):
         if not self._rendering_initialized:
             self._init_render()
 
-        return self.viewer.render(self, return_rgb_array=mode == "rgb_array")
+        return self.viewer.render(self, return_rgb_array=self.render_mode == "rgb_array")
 
     def close(self):
         if self.viewer:
