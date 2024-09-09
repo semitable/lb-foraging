@@ -14,6 +14,7 @@
   - [Observation Space](#observation-space)
   - [Action space](#action-space)
   - [Rewards](#rewards)
+- [Human Play](#human-play)
 - [Please Cite](#please-cite)
 - [Contributing](#contributing)
 - [Contact](#contact)
@@ -143,6 +144,31 @@ for a in adj_players: # the players that participated in loading the food
             adj_player_level * self._food_spawned
         )  # normalize reward so that the final sum of rewards is one.
 ```
+
+
+<!-- HUMAN PLAY SCRIPT -->
+# Human Play
+
+We also provide a simple script that allows you to play the environment as a human. This is useful for debugging and understanding the environment dynamics. To play the environment, run the following command:
+```sh
+python human_play.py --env <env_name>
+```
+where `<env_name>` is the name of the environment you want to play. For example, to play an LBF task with two agents and one food in a 8x8 grid, run:
+```sh
+python human_play.py --env Foraging-8x8-2p-1f-v3
+```
+
+Within the script, you can control a single agent at the time using the following keys:
+- Arrow keys: move current agent up/ down/ left/ right
+- L: load food
+- K: load food and let agent keep loading (even if agent is swapped)
+- SPACE: do nothing
+- TAB: change the current agent (rotates through all agents)
+- R: reset the environment and start a new episode
+- H: show help
+- D: display agent info (at every time step)
+- ESC: exit
+
 
 <!-- CITATION -->
 # Please Cite

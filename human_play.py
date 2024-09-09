@@ -31,6 +31,12 @@ def parse_args():
         help="Environment to use",
     )
     parser.add_argument(
+        "--max_steps",
+        type=int,
+        default=50,
+        help="Maximum number of steps per episode",
+    )
+    parser.add_argument(
         "--display_info",
         action="store_true",
         help="Display agent info per step",
@@ -39,20 +45,15 @@ def parse_args():
 
 
 class InteractiveLBFEnv:
-    """
-    Use this script to interactively play with scenarios
-
-    You can change agent by pressing TAB
-    You can reset the environment by pressing R
-    You can control agent actions with the arrow keys for movement and P/C for picking up/ collecting food
-    """
+    """Use this script to interactively play LBF"""
 
     def __init__(
         self,
         env: str,
+        max_steps: int,
         display_info: bool = True,
     ):
-        self.env = gym.make(env, render_mode="human")
+        self.env = gym.make(env, render_mode="human", max_episode_steps=max_steps)
         self.n_agents = self.env.unwrapped.n_agents
         self.running = True
         self.current_agent_index = 0
@@ -86,20 +87,19 @@ class InteractiveLBFEnv:
         print("Press ESC to exit")
         print()
 
-    def _format_pos(self, pos):
-        return f"row {pos[0] + 1}, col {pos[1] + 1}"
+    def _get_current_agent_info(self):
+        agent_level = self.env.unwrapped.players[self.current_agent_index].level
+        x, y = self.env.unwrapped.players[self.current_agent_index].position
+        return f"Agent {self.current_agent_index + 1} (Level {agent_level}, at row {x + 1}, col {y + 1})"
 
     def _display_info(self, obss, rews, done):
         print(f"Step {self.t}:")
-        agent_level = self.env.unwrapped.players[self.current_agent_index].level
-        agent_position = self.env.unwrapped.players[self.current_agent_index].position
-        print(f"\tSelected: Agent {self.current_agent_index + 1} (Level {agent_level}, at {self._format_pos(agent_position)})")
+        print(f"\tSelected: {self._get_current_agent_info()}")
         if self.loading_agents:
             print(f"\tLoading: {[i + 1 for i in self.loading_agents]}")
         print(f"\tObs: {obss[self.current_agent_index]}")
         print(f"\tRew: {round(rews[self.current_agent_index], 3)}")
         print(f"\tDone: {done}")
-        # print(f"\tEp returns: {round(self.ep_returns[self.current_agent_index], 3)}")
         print()
 
     def _increment_current_agent_index(self, index: int):
@@ -132,9 +132,7 @@ class InteractiveLBFEnv:
                 self.current_agent_index
             )
             if self.display_info:
-                agent_level = self.env.unwrapped.players[self.current_agent_index].level
-                agent_position = self.env.unwrapped.players[self.current_agent_index].position
-                print(f"Now selected: Agent {self.current_agent_index + 1} (Level {agent_level}, at {self._format_pos(agent_position)})")
+                print(f"Now selected: {self._get_current_agent_info()}")
         elif k == key.R:
             self.current_action = None
             self.reset = True
@@ -190,4 +188,4 @@ class InteractiveLBFEnv:
 
 if __name__ == "__main__":
     args = parse_args()
-    InteractiveLBFEnv(env=args.env, display_info=args.display_info)
+    InteractiveLBFEnv(env=args.env, display_info=args.display_info, max_steps=args.max_steps)
