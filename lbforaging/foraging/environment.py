@@ -598,9 +598,6 @@ class ForagingEnv(gym.Env):
             # setting seed
             super().reset(seed=seed, options=options)
 
-        if self.render_mode == "human":
-            self.render()
-
         self.field = np.zeros(self.field_size, np.int32)
         self.spawn_players(self.min_player_level, self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
