@@ -195,8 +195,6 @@ Within the script, you can control a single agent at the time using the followin
 <!-- CONTRIBUTING -->
 # Contributing
 
-**WARNING:** This is a fork meant as an archive of the code used in our publications. Development is still active in the [original repository](https://github.com/semitable/lb-foraging). Please redirect any issues, PRs, or questions there.
-
 1. Fork the Project
 2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
 3. Commit your Changes (`git commit -m 'Add some AmazingFeature`)
