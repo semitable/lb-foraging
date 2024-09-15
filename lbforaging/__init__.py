@@ -5,7 +5,7 @@ from gymnasium import register
 
 sizes = range(5, 20)
 players = range(2, 10)
-foods = range(1, 5)
+foods = range(1, 10)
 max_food_level = [None]  # [None, 1]
 coop = [True, False]
 partial_obs = [True, False]
