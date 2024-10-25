@@ -245,7 +245,7 @@ class ForagingEnv(gym.Env):
         high_obs = np.array(max_obs)
         assert low_obs.shape == high_obs.shape
         return gym.spaces.Box(
-            low=low_obs, high=high_obs, shape=[len(low_obs)], dtype=np.float32
+            low=low_obs, high=high_obs, shape=low_obs.shape, dtype=np.float32
         )
 
     @classmethod
@@ -436,7 +436,7 @@ class ForagingEnv(gym.Env):
         elif action == Action.LOAD:
             return self.adjacent_food(*player.position) > 0
 
-        self.logger.error("Undefined action {} from {}".format(action, player.name))
+        self.logger.error(f"Undefined action {action} from {player.name}")
         raise ValueError("Undefined action")
 
     def _transform_to_neighborhood(self, center, sight, position):
@@ -574,13 +574,11 @@ class ForagingEnv(gym.Env):
                 get_agent_grid_bounds(*player.position) for player in self.players
             ]
             nobs = tuple(
-                [
-                    layers[:, start_x:end_x, start_y:end_y]
-                    for start_x, end_x, start_y, end_y in agents_bounds
-                ]
+                layers[:, start_x:end_x, start_y:end_y]
+                for start_x, end_x, start_y, end_y in agents_bounds
             )
         else:
-            nobs = tuple([make_obs_array(obs) for obs in observations])
+            nobs = tuple(make_obs_array(obs) for obs in observations)
 
         # check the space of obs
         for i, obs in enumerate(nobs):
@@ -631,10 +629,7 @@ class ForagingEnv(gym.Env):
         for i, (player, action) in enumerate(zip(self.players, actions)):
             if action not in self._valid_actions[player]:
                 self.logger.info(
-                    "{}{} attempted invalid action {}.".format(
-                        player.name, player.position, action
-                    )
-                )
+                    f"{player.name}{player.position} attempted invalid action {action}.")
                 actions[i] = Action.NONE
 
         loading_players = set()
