@@ -104,6 +104,24 @@ def test_seed():
         assert np.array_equal(o1, o2)
 
 
+@pytest.mark.parametrize(
+    "name",
+    [
+        "Foraging-5x5-2p-1f-v3",
+        "Foraging-8x8-2p-2f-v3",
+        "Foraging-8x8-3p-1f-coop-v3",
+    ],
+)
+def test_seeded_reset_is_reproducible(name):
+    env = gym.make(name)
+    for seed in range(10):
+        expected, _ = gym.make(name).reset(seed=seed)
+        for _ in range(3):
+            obs, _ = env.reset(seed=seed)
+            for o1, o2 in zip(obs, expected):
+                assert np.array_equal(o1, o2)
+
+
 def test_food_spawning_0():
     env = gym.make("Foraging-6x6-2p-2f-v3")
 

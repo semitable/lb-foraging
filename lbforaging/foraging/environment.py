@@ -599,6 +599,10 @@ class ForagingEnv(gym.Env):
             super().reset(seed=seed, options=options)
 
         self.field = np.zeros(self.field_size, np.int32)
+        # clear positions from the previous episode; spawn_players would otherwise
+        # treat them as occupied, making the initial state depend on that episode
+        for player in self.players:
+            player.position = None
         self.spawn_players(self.min_player_level, self.max_player_level)
         player_levels = sorted([player.level for player in self.players])
 
